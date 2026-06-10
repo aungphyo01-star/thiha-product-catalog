@@ -24,7 +24,7 @@ st.markdown("""
 URL = "https://odoo-stg.linklusion.co.jp"
 DB = "odoo15"
 USERNAME = "aungphyo01@gmail.com"
-PASSWORD = "9aa381074a400d3666e7e36a3f578e18d20388a06"
+PASSWORD = "9aa38107a400d3666e7e36a3f578e18d20388a06"
 
 # --- Google Sheet မှ Data ဖတ်ယူမည့် Function ---
 @st.cache_data(ttl=300)  # ၅ မိနစ်လျှင် တစ်ကြိမ် ဒေတာအသစ် စစ်ပါမည်
@@ -79,11 +79,34 @@ if df is not None:
     for index, row in df.iterrows():
         p_id = str(row.get('ID', ''))
         p_name_en = row.get('Name', '')
-        
-        # 🛠️ FIXED: Syntax Error မတက်စေရန် သေချာပြင်ဆင်ထားသော နေရာဖြစ်ပါသည်
         p_name_mm = str(row.get('Myanmar_Name', '')) if pd.notna(row.get('Myanmar_Name')) else ""
         p_price = row.get('Price', 0)
         
+        # 🛠️ FIXED: ကွင်းအပိတ် (`}`) နှင့် (` ) `) များကို စနစ်တကျ ပြန်လည်ပိတ်ပေးထားပါတယ်ဗျာ
         product_list.append({
             "name_en": p_name_en,
-            "name_mm":
+            "name_mm": p_name_mm,
+            "price": p_price,
+            "image": image_dict.get(p_id, "")
+        })
+
+    # --- 🎨 တစ်တန်းလျှင် ၇ ခုစီ ပြသမည့် Grid စနစ် ---
+    def display_grid(p_set, title, icon):
+        st.markdown(f'<div class="section-banner"><h2>{icon} {title}</h2></div>', unsafe_allow_html=True)
+        if not p_set:
+            st.info("ပြသရန် ကုန်ပစ္စည်း မရှိသေးပါ။")
+            return
+
+        cols_per_row = 7  # တစ်တန်းလျှင် ၇ ခု ကွက်တိစီခြင်း
+        for i in range(0, len(p_set), cols_per_row):
+            row_items = p_set[i : i + cols_per_row]
+            cols = st.columns(cols_per_row)
+
+            for idx, prod in enumerate(row_items):
+                with cols[idx]:
+                    with st.container(border=True):
+                        # ၁။ ဓာတ်ပုံပြသခြင်း
+                        if prod['image']:
+                            st.markdown(f'<div style="text-align:center;"><img src="data:image/png;base64,{prod["image"]}" style="height:110px; object-fit:contain; margin-bottom:8px;"></div>', unsafe_allow_html=True)
+                        else:
+                            st.markdown('<div style="height:110px;
