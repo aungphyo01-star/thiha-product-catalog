@@ -4,10 +4,13 @@ import xmlrpc.client
 import ssl
 from deep_translator import GoogleTranslator
 
+# --- SSL Bypass ---
 ssl._create_default_https_context = ssl._create_unverified_context
 
+# --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
+# UI Global Styling (ကတ်တလောက်စာရွက်ဒီဇိုင်းကဲ့သို့ သပ်ရပ်လှပစေရန်)
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -18,11 +21,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- Odoo ERP System Credentials ---
 URL = "https://odoo-stg.linklusion.co.jp"
 DB = "odoo15"
 USERNAME = "aungphyo01@gmail.com"
 PASSWORD = "9aa38107a400d3666e7e36a3f578e18d20388a06"
 
+# --- Google Sheet မှ Data ဖတ်ယူမည့် Function ---
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
@@ -33,12 +38,15 @@ def load_catalog_data():
     except:
         return None
 
+# --- ⚡ FIXED: Odoo ထံမှ ဈေးနှုန်း (list_price) နှင့် ဓာတ်ပုံကို တိုက်ရိုက်ဆွဲယူသည့် စနစ် ---
 @st.cache_data(ttl=300)
 def fetch_odoo_details(product_ids):
     try:
         common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
         uid = common.authenticate(DB, USERNAME, PASSWORD, {})
         models = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/object")
+        
+        # 🛠️ FIXED HERE: fields ထဲတွင် list_price ကို သေချာပေါက် ပါဝင်အောင် တောင်းဆိုလိုက်ပါပြီ
         details = models.execute_kw(
             DB, uid, PASSWORD, "product.template", "read",
             [product_ids], {"fields": ["id", "list_price", "image_128"]}
@@ -47,6 +55,7 @@ def fetch_odoo_details(product_ids):
     except:
         return {}
 
+# --- ပင်မ Logic မောင်းနှင်ခြင်း ---
 df = load_catalog_data()
 
 if df is not None:
@@ -57,7 +66,6 @@ if df is not None:
 
     if search_query:
         # ⚡ စမတ်ကျသော Cross-Language Search စနစ်
-        # ရိုက်လိုက်တဲ့ စာသားထဲမှာ မြန်မာစာ ပါဝင်နေသလား စစ်ဆေးခြင်း
         is_myanmar = any('\u1000' <= char <= '\u109f' for char in search_query)
         
         if is_myanmar:
@@ -78,16 +86,17 @@ if df is not None:
     product_list = []
     for index, row in df.iterrows():
         p_id = str(row.get('ID', ''))
-        p_name_en = row.get('Name', '') # UI ပေါ်တွင် English Name ကိုသာ သုံးမည်
+        p_name_en = row.get('Name', '') 
         
         p_details = odoo_details.get(p_id, {"price": 0, "image": ""})
         
         product_list.append({
-            "name": p_name_en, # ⚡ UI ပြသရန် English သီးသန့်ဖြစ်သည်
+            "name": p_name_en, 
             "price": p_details["price"],
             "image": p_details["image"]
         })
 
+    # --- 🎨 တစ်တန်းလျှင် ၇ ခုစီ ပြသမည့် Grid စနစ် ---
     def display_grid(p_set, title, icon):
         st.markdown(f'<div class="section-banner"><h2>{icon} {title}</h2></div>', unsafe_allow_html=True)
         if not p_set:
@@ -107,9 +116,10 @@ if df is not None:
                         else:
                             st.markdown('<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-bottom:8px; color:#94a3b8; font-size:11px;">No Image</div>', unsafe_allow_html=True)
 
-                        # ⚡ ကတ်တလောက်ပေါ်တွင် English နာမည်ကို သန့်သန့်ရှင်းရှင်း ပြသခြင်း
+                        # ကတ်တလောက်ပေါ်တွင် English နာမည်ကို သန့်သန့်ရှင်းရှင်း ပြသခြင်း
                         st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">{prod["name"]}</div>', unsafe_allow_html=True)
 
+                        # ဈေးနှုန်းထုတ်ပြခြင်း
                         try:
                             price_str = f"{float(prod['price']):,.0f}"
                         except:
