@@ -8,10 +8,10 @@ import json
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # --- Odoo ERP System Configurations ---
-URL = "https://odoo-stg.linklusion.co.jp"
+URL = "https://odoo.linklusion.co.jp"
 DB = "odoo15"
 USERNAME = "aungphyo01@gmail.com"
-PASSWORD = "9aa38107a400d3666e7e36a3f578e18d20388a06"
+PASSWORD = "f48f4bafa7c2b69d4156fc44e424182070c8287d"
 
 # --- Google Sheet Config ---
 SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
