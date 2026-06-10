@@ -2,14 +2,18 @@ name: Automated Odoo to Sheets Sync
 
 on:
   schedule:
-    # မြန်မာစံတော်ချိန် မနက် ၇:၃၀ နှင့် ည ၇:၃၀ တွင် တစ်နေ့ ၂ ကြိမ် Auto မောင်းမည့် စနစ် (UTC 01:00 & 13:00)
+    # မြန်မာစံတော်ချိန် မနက် ၇:၃၀ နှင့် ည ၇:၃၀ တွင် တစ်နေ့ ၂ ကြိမ် Auto မောင်းမည့် စနစ်
     - cron: '0 1 * * *'
     - cron: '0 13 * * *'
-  workflow_dispatch: # သင့်ဘက်က လိုအပ်ရင် ခလုတ်နှိပ်ပြီး ကိုယ်တိုင် ချက်ချင်း Run လို့ရအောင် လမ်းဖွင့်ထားခြင်း
+  workflow_dispatch: # ခလုတ်နှိပ်ပြီး ကိုယ်တိုင် ချက်ချင်း Run လို့ရအောင် လမ်းဖွင့်ထားခြင်း
 
 jobs:
   sync-data:
     runs-on: ubuntu-latest
+    # ⚡ GitHub အလိုရှိသော Node.js 24 သတ်မှတ်ချက်ကို အတင်းမောင်းနှင်ရန် ထည့်သွင်းခြင်း
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
