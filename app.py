@@ -35,6 +35,7 @@ if df is not None:
     df['Name'] = df['Name'].fillna("").astype(str)
     df['Myanmar_Name'] = df['Myanmar_Name'].fillna("").astype(str)
     df['Price'] = df['Price'].fillna(0).astype(float)
+    df['Image'] = df['Image'].fillna("").astype(str)  # ⚡ Image တိုင်အား ဖတ်ယူခြင်း
     df['Category'] = df['Category'].fillna("Uncategorized").astype(str)
 
     # 📂 ၁။ Category Filter
@@ -48,7 +49,7 @@ if df is not None:
     if selected_category != "All Categories":
         df = df[df['Category'] == selected_category]
 
-    # Search ရှာဖွေခြင်း Logic (မြန်မာလိုရိုက်ရင် အနောက်ကွယ်က အင်္ဂလိပ်လိုပြောင်းရှာပေးသည်)
+    # Search ရှာဖွေခြင်း Logic
     if search_query:
         is_myanmar = any('\u1000' <= char <= '\u109f' for char in search_query)
         if is_myanmar:
@@ -67,12 +68,12 @@ if df is not None:
     if total_items > 0:
         product_list = []
         for index, row in df.iterrows():
-            # ကတ်တလောက်ပေါ်တွင် အင်္ဂလိပ်နာမည်ကိုပြမည် (အကယ်၍ Sheet ထဲတွင် မြန်မာနာမည် ဖြည့်ထားပါက ၎င်းအား ပြပေးမည်)
             display_name = row['Myanmar_Name'] if row['Myanmar_Name'] else row['Name']
             
             product_list.append({
                 "name": display_name, 
-                "price": row['Price']
+                "price": row['Price'],
+                "image": row['Image']  # ⚡ ဓာတ်ပုံဒေတာအား ထည့်သွင်းခြင်း
             })
 
         # --- 🎨 Grid ပြသခြင်းစနစ် (တစ်တန်းလျှင် ၇ ခု) ---
@@ -90,13 +91,16 @@ if df is not None:
                 for idx, prod in enumerate(row_items):
                     with cols[idx]:
                         with st.container(border=True):
-                            # 🖼️ ဓာတ်ပုံအား လောလောဆယ် No Image ထားရှိခြင်း
-                            st.markdown('<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-bottom:8px; color:#94a3b8; font-size:11px;">No Image</div>', unsafe_allow_html=True)
+                            # ⚡ FIXED: Google Sheet ထဲမှ ပါလာသော ပစ္စည်းဓာတ်ပုံအား ဖော်ပြခြင်း
+                            if prod['image'] and prod['image'].strip() != "":
+                                st.markdown(f'<div style="text-align:center;"><img src="data:image/png;base64,{prod["image"]}" style="height:110px; object-fit:contain; margin-bottom:8px;"></div>', unsafe_allow_html=True)
+                            else:
+                                st.markdown('<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-bottom:8px; color:#94a3b8; font-size:11px;">No Image</div>', unsafe_allow_html=True)
 
                             # ကုန်ပစ္စည်းအမည်
                             st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">{prod["name"]}</div>', unsafe_allow_html=True)
 
-                            # ဈေးနှုန်းဂဏန်းအမှန်
+                            # ဈေးနှုန်း
                             try:
                                 price_str = f"{float(prod['price']):,.0f}"
                             except:
