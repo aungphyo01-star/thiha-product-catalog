@@ -13,7 +13,7 @@ PASSWORD = "9aa38107a400d3666e7e36a3f578e18d20388a06"
 SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
 
 # ⚠️ သင့် Google Sheet ရဲ့ Web App URL ကို ဒီနေရာမှာ သေချာပြန်ထည့်ပေးပါဗျာ
-WEB_APP_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE"
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzwLwVZA4TEXEjvtWMvH_aTGPpo1DBoSqicsQF1utj2kZCNMfMUpLMQJ23zO_-yVCH3/exec"
 
 def sync():
     try:
