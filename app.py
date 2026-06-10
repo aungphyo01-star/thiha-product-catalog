@@ -24,7 +24,7 @@ st.markdown("""
 URL = "https://odoo-stg.linklusion.co.jp"
 DB = "odoo15"
 USERNAME = "aungphyo01@gmail.com"
-PASSWORD = "9aa38107a400d3666e7e36a3f578e18d20388a06"
+PASSWORD = "9aa381074a400d3666e7e36a3f578e18d20388a06"
 
 # --- Google Sheet မှ Data ဖတ်ယူမည့် Function ---
 @st.cache_data(ttl=300)  # ၅ မိနစ်လျှင် တစ်ကြိမ် ဒေတာအသစ် စစ်ပါမည်
@@ -52,7 +52,7 @@ def fetch_product_images(product_ids):
     except:
         return {}
 
-# --- Пင်မ Logic မောင်းနှင်ခြင်း ---
+# --- ပင်မ Logic မောင်းနှင်ခြင်း ---
 df = load_catalog_data()
 
 if df is not None:
@@ -79,4 +79,11 @@ if df is not None:
     for index, row in df.iterrows():
         p_id = str(row.get('ID', ''))
         p_name_en = row.get('Name', '')
-        p_name_mm = row.get('Myanmar_Name', '') if pd.notna(row.get('Myanmar_Name'))
+        
+        # 🛠️ FIXED: Syntax Error မတက်စေရန် သေချာပြင်ဆင်ထားသော နေရာဖြစ်ပါသည်
+        p_name_mm = str(row.get('Myanmar_Name', '')) if pd.notna(row.get('Myanmar_Name')) else ""
+        p_price = row.get('Price', 0)
+        
+        product_list.append({
+            "name_en": p_name_en,
+            "name_mm":
