@@ -38,7 +38,7 @@ def load_catalog_data():
     except:
         return None
 
-# --- ⚡ FIXED: Odoo ထံမှ ဈေးနှုန်း (list_price) နှင့် ဓာတ်ပုံကို တိုက်ရိုက်ဆွဲယူသည့် စနစ် ---
+# --- Odoo ထံမှ ဈေးနှုန်းနှင့် ဓာတ်ပုံကို တိုက်ရိုက်ဆွဲယူသည့် စနစ် ---
 @st.cache_data(ttl=300)
 def fetch_odoo_details(product_ids):
     try:
@@ -46,7 +46,6 @@ def fetch_odoo_details(product_ids):
         uid = common.authenticate(DB, USERNAME, PASSWORD, {})
         models = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/object")
         
-        # 🛠️ FIXED HERE: fields ထဲတွင် list_price ကို သေချာပေါက် ပါဝင်အောင် တောင်းဆိုလိုက်ပါပြီ
         details = models.execute_kw(
             DB, uid, PASSWORD, "product.template", "read",
             [product_ids], {"fields": ["id", "list_price", "image_128"]}
@@ -65,17 +64,18 @@ if df is not None:
         df['Name'] = df['Name'].fillna("").astype(str)
 
     if search_query:
-        # ⚡ စမတ်ကျသော Cross-Language Search စနစ်
+        # ⚡ OPTIMIZATION: ရိုက်လိုက်သည့် စာသားထဲတွင် မြန်မာစာလုံး (Unicode range) တကယ် ပါ/မပါ စစ်ဆေးခြင်း
         is_myanmar = any('\u1000' <= char <= '\u109f' for char in search_query)
         
         if is_myanmar:
             try:
-                # မြန်မာလို ရိုက်ထားတာဆိုရင် အနောက်ကွယ်မှာ အင်္ဂလိပ်လို Auto ပြောင်းပြီး Search Engine ထံ ပို့သည်
+                # ြမန်မာလို ရိုက်မှသာ အနောက်ကွယ်က Translate ကို ခေါ်မည် (မလိုအပ်ဘဲ မလုပ်စေရန် တားဆီးခြင်း)
                 translated_query = GoogleTranslator(source='my', target='en').translate(search_query)
                 query = translated_query.lower()
             except:
                 query = search_query.lower()
         else:
+            # ⚡ အင်္ဂလိပ်လို ရိုက်ပါက Translate ကို လုံးဝမခေါ်ဘဲ တိုက်ရိုက် အမြန်နှုန်းဖြင့် ရှာဖွေသည်
             query = search_query.lower()
             
         df = df[df['Name'].str.lower().str.contains(query, na=False)]
@@ -96,7 +96,7 @@ if df is not None:
             "image": p_details["image"]
         })
 
-    # --- 🎨 တစ်တန်းလျှင် ၇ ခုစီ ပြသမည့် Grid စနစ် ---
+    # --- 🎨 Grid ပြသခြင်းစနစ် ---
     def display_grid(p_set, title, icon):
         st.markdown(f'<div class="section-banner"><h2>{icon} {title}</h2></div>', unsafe_allow_html=True)
         if not p_set:
@@ -116,10 +116,8 @@ if df is not None:
                         else:
                             st.markdown('<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-bottom:8px; color:#94a3b8; font-size:11px;">No Image</div>', unsafe_allow_html=True)
 
-                        # ကတ်တလောက်ပေါ်တွင် English နာမည်ကို သန့်သန့်ရှင်းရှင်း ပြသခြင်း
                         st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">{prod["name"]}</div>', unsafe_allow_html=True)
 
-                        # ဈေးနှုန်းထုတ်ပြခြင်း
                         try:
                             price_str = f"{float(prod['price']):,.0f}"
                         except:
