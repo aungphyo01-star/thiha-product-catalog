@@ -60,7 +60,6 @@ if df is not None:
         else:
             query = search_query.lower()
             
-        # Sheet ထဲက Name (English) ထဲမှာ ရှာဖွေခြင်း
         df = df[df['Name'].str.lower().str.contains(query, na=False)]
 
     total_items = len(df)
@@ -76,7 +75,7 @@ if df is not None:
                 "price": row['Price']
             })
 
-        # --- 🎨 Grid ប្រသခြင်းစနစ် (တစ်တန်းလျှင် ၇ ခု) ---
+        # --- 🎨 Grid ပြသခြင်းစနစ် (တစ်တန်းလျှင် ၇ ခု) ---
         def display_grid(p_set, title, icon):
             st.markdown(f'<div class="section-banner"><h2>{icon} {title} - {selected_category} ({total_items} ခု)</h2></div>', unsafe_allow_html=True)
             if not p_set:
@@ -91,7 +90,7 @@ if df is not None:
                 for idx, prod in enumerate(row_items):
                     with cols[idx]:
                         with st.container(border=True):
-                            # 🖼️ ဓာတ်ပုံအား လောလောဆယ် No Image အဖြစ် အပေါ့ပါးဆုံး ထားရှိခြင်း
+                            # 🖼️ ဓာတ်ပုံအား လောလောဆယ် No Image ထားရှိခြင်း
                             st.markdown('<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-bottom:8px; color:#94a3b8; font-size:11px;">No Image</div>', unsafe_allow_html=True)
 
                             # ကုန်ပစ္စည်းအမည်
