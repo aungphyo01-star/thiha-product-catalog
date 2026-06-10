@@ -82,7 +82,6 @@ if df is not None:
         p_name_mm = str(row.get('Myanmar_Name', '')) if pd.notna(row.get('Myanmar_Name')) else ""
         p_price = row.get('Price', 0)
         
-        # 🛠️ FIXED: ကွင်းအပိတ် (`}`) နှင့် (` ) `) များကို စနစ်တကျ ပြန်လည်ပိတ်ပေးထားပါတယ်ဗျာ
         product_list.append({
             "name_en": p_name_en,
             "name_mm": p_name_mm,
@@ -109,4 +108,21 @@ if df is not None:
                         if prod['image']:
                             st.markdown(f'<div style="text-align:center;"><img src="data:image/png;base64,{prod["image"]}" style="height:110px; object-fit:contain; margin-bottom:8px;"></div>', unsafe_allow_html=True)
                         else:
-                            st.markdown('<div style="height:110px;
+                            st.markdown('<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-bottom:8px; color:#94a3b8; font-size:11px;">No Image</div>', unsafe_allow_html=True)
+
+                        # ၂။ ကုန်ပစ္စည်းအမည် (မြန်မာအမည်ရှိလျှင် ဦးစားပေးပြသမည်)
+                        display_name = prod['name_mm'] if prod['name_mm'] else prod['name_en']
+                        st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">{display_name}</div>', unsafe_allow_html=True)
+
+                        # ၃။ ဈေးနှုန်း (ထင်ရှားသော အပြာရောင် ၂၂px)
+                        try:
+                            price_str = f"{float(prod['price']):,.0f}"
+                        except:
+                            price_str = str(prod['price'])
+
+                        st.markdown(f'<div style="font-size:22px; font-weight:800; color:#002d72; text-align:center; margin-top:5px;">{price_str} <span style="font-size:12px; font-weight:400; color:#475569;">ks</span></div>', unsafe_allow_html=True)
+
+    # ကတ်တလောက် ထုတ်ပြခြင်း
+    display_grid(product_list, "Product Catalog", "📦")
+else:
+    st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
