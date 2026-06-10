@@ -13,7 +13,7 @@ DB = "odoo15"
 USERNAME = "aungphyo01@gmail.com"
 PASSWORD = "f48f4bafa7c2b69d4156fc44e424182070c8287d"
 
-# --- Google Sheet Web App URL ---
+# --- ⚡ FIXED: သင့် Apps Script URL အသစ်စက်စက်ကို တိုက်ရိုက်ထည့်သွင်းထားပါသည် ---
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzwLwVZA4TEXEjvtWMvH_aTGPpo1DBoSqicsQF1utj2kZCNMfMUpLMQJ23zO_-yVCH3/exec"
 
 def sync():
@@ -41,10 +41,9 @@ def sync():
             p_category = [item.strip() for item in categ_data[1].split("/")][-1] if categ_data else "Uncategorized"
             
             # Google Sheet Header အတိုင်း နေရာချခြင်း: [ID, Name, Myanmar_Name, Price, Image, Category]
-            # (Myanmar_Name နှင့် Image နေရာကို Blank ထားပေးသဖြင့် သင် Sheet ထဲတွင် စိတ်ကြိုက်ဖြည့်နိုင်သည်)
             raw_data_rows.append([p_id, p_name_en, "", p_price, "", p_category])
 
-        print("📤 Google Sheet သို့ ဒေတာများ လွှဲပြောင်းတင်ပို့နေပါသည်...")
+        print("📤 Google Sheet အသစ်သို့ ဒေတာများ လွှဲပြောင်းတင်ပို့နေပါသည်...")
         payload = {"is_first": True, "data": raw_data_rows}
         headers = {"Content-Type": "application/json"}
         
