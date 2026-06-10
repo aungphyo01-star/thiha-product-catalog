@@ -1,0 +1,104 @@
+import streamlit as st
+import pandas as pd
+import xmlrpc.client
+import ssl
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
+# Webpage setting
+st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
+
+st.markdown("""
+    <style>
+    .stApp { background-color: #f8fafc; } 
+    .section-banner {
+        background-color: #ffd700; padding: 12px; border-radius: 6px; 
+        border-left: 8px solid #002d72; margin: 25px 0; color: black; font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Odoo ERP System Credentials
+URL = "https://odoo-stg.linklusion.co.jp"
+DB = "odoo15"
+USERNAME = "aungphyo01@gmail.com"
+PASSWORD = "9aa38107a400d3666e7e36a3f578e18d20388a06"
+
+@st.cache_data(ttl=300)
+def load_catalog_data():
+    SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
+    url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv"
+    try:
+        df = pd.read_csv(url)
+        return df
+    except:
+        return None
+
+@st.cache_data(ttl=600)
+def fetch_product_images(product_ids):
+    try:
+        common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
+        uid = common.authenticate(DB, USERNAME, PASSWORD, {})
+        models = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/object")
+        images = models.execute_kw(
+            DB, uid, PASSWORD, "product.template", "read",
+            [product_ids], {"fields": ["id", "image_128"]}
+        )
+        return {str(img['id']): img['image_128'] for img in images if img.get('image_128')}
+    except:
+        return {}
+
+df = load_catalog_data()
+
+if df is not None:
+    search_query = st.text_input("🔍 ကုန်ပစ္စည်းအမည်ဖြင့် ရှာဖွေရန် (မြန်မာ/English)", placeholder="Type to search...")
+
+    if search_query:
+        query = search_query.lower()
+        df = df[df['Name'].str.lower().str.contains(query, na=False) | df['Myanmar_Name'].str.lower().str.contains(query, na=False)]
+
+    visible_ids = df['ID'].dropna().astype(int).tolist()
+    image_dict = fetch_product_images(visible_ids) if visible_ids else {}
+
+    product_list = []
+    for index, row in df.iterrows():
+        p_id = str(row['ID'])
+        product_list.append({
+            "name_en": row['Name'],
+            "name_mm": row['Myanmar_Name'] if pd.notna(row['Myanmar_Name']) else "",
+            "price": row['Price'],
+            "image": image_dict.get(p_id, "")
+        })
+
+    def display_grid(p_set, title, icon):
+        st.markdown(f'<div class="section-banner"><h2>{icon} {title}</h2></div>', unsafe_allow_html=True)
+        if not p_set:
+            st.info("ပြသရန် ကုန်ပစ္စည်း မရှိသေးပါ။")
+            return
+
+        cols_per_row = 7
+        for i in range(0, len(p_set), cols_per_row):
+            row_items = p_set[i : i + cols_per_row]
+            cols = st.columns(cols_per_row)
+
+            for idx, prod in enumerate(row_items):
+                with cols[idx]:
+                    with st.container(border=True):
+                        if prod['image']:
+                            st.markdown(f'<div style="text-align:center;"><img src="data:image/png;base64,{prod["image"]}" style="height:110px; object-fit:contain; margin-bottom:8px;"></div>', unsafe_allow_html=True)
+                        else:
+                            st.markdown('<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-bottom:8px; color:#94a3b8; font-size:11px;">No Image</div>', unsafe_allow_html=True)
+
+                        display_name = prod['name_mm'] if prod['name_mm'] else prod['name_en']
+                        st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">{display_name}</div>', unsafe_allow_html=True)
+
+                        try:
+                            price_str = f"{float(prod['price']):,.0f}"
+                        except:
+                            price_str = str(prod['price'])
+
+                        st.markdown(f'<div style="font-size:22px; font-weight:800; color:#002d72; text-align:center; margin-top:5px;">{price_str} <span style="font-size:12px; font-weight:400; color:#475569;">ks</span></div>', unsafe_allow_html=True)
+
+    display_grid(product_list, "Product Catalog", "📦")
+else:
+    st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
