@@ -10,7 +10,6 @@ on:
 jobs:
   sync-data:
     runs-on: ubuntu-latest
-    # ⚡ GitHub အလိုရှိသော Node.js 24 သတ်မှတ်ချက်ကို အတင်းမောင်းနှင်ရန် ထည့်သွင်းခြင်း
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       
@@ -24,8 +23,9 @@ jobs:
           python-version: '3.10'
 
       - name: Install Libraries
+        # 🛠️ FIXED: requirements.txt ဖိုင်ထဲက library အားလုံးကို အလိုအလျောက် သွင်းခိုင်းသည့် စနစ်ပြောင်းလိုက်ပါပြီ
         run: |
-          pip install pandas requests
+          pip install -r requirements.txt
 
       - name: Run Cloud Sync Worker
         run: python sync_worker.py
