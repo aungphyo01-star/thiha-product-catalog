@@ -22,10 +22,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Odoo ERP System Credentials ---
-URL = "https://odoo-stg.linklusion.co.jp"
+URL = "https://odoo.linklusion.co.jp"
 DB = "odoo15"
 USERNAME = "aungphyo01@gmail.com"
-PASSWORD = "9aa38107a400d3666e7e36a3f578e18d20388a06"
+PASSWORD = "f48f4bafa7c2b69d4156fc44e424182070c8287d"
 
 # --- Google Sheet မှ Data ဖတ်ယူမည့် Function ---
 @st.cache_data(ttl=300)
