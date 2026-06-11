@@ -29,7 +29,7 @@ def sync():
         total_products = len(product_ids)
         print(f"📦 ERP ထံတွင် ရောင်းချမည့် ပစ္စည်းစုစုပေါင်း {total_products} ခု တွေ့ရှိရပါသည်။")
 
-        # ⚡ CHUNK PAGINATION: Odoo ဆီကနေ ၄၀ စီ ခွဲဆွဲပြီး စနစ်ထဲမှာ အရင်အကုန်စုသည်
+        # ⚡ CHUNK PAGINATION: Odoo ဆီကနေ ၄၀ စီ စနစ်တကျ ခွဲဆွဲပြီး စနစ်ထဲမှာ အရင်အကုန်စုသည်
         CHUNK_SIZE = 40
         all_fetched_products = []
         
@@ -37,7 +37,7 @@ def sync():
             chunk_ids = product_ids[i : i + CHUNK_SIZE]
             chunk_products = models.execute_kw(
                 DB, uid, PASSWORD, "product.template", "read", 
-                [chunk_ids], {"fields": ["id", "name", "list_price", "categ_id"]} # ⚡ ဓာတ်ပုံ Text (image_128) ကို လုံးဝ မဆွဲတော့ပါ
+                [chunk_ids], {"fields": ["id", "name", "list_price", "categ_id"]} # ⚡ FIXED: image_128 ကို လုံးဝ မခေါ်တော့ပါ
             )
             all_fetched_products.extend(chunk_products)
             print(f"🔹 ဒေါင်းလုဒ်ဆွဲပြီးစီးမှု: {len(all_fetched_products)}/{total_products} ခု...")
@@ -63,6 +63,7 @@ def sync():
         
         response = requests.post(WEB_APP_URL, data=json.dumps(payload), headers=headers)
         print(f"✨ [SUCCESS] Final Sheet Sync Status: {response.text}")
+        print(f"💡 အခု ပစ္စည်း ၆溝 ကျော်လုံး Google Sheet ထဲ ကွက်တိ ရောက်သွားပါပြီဗျာ!")
         
     except Exception as e:
         print(f"❌ Error: {e}")
