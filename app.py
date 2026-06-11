@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
+from deep_translator import GoogleTranslator
 
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling: ကတ်များ ကျစ်လျစ်သပ်ရပ်ပြီး ပစ္စည်းအမည်နှင့် စျေးနှုန်း ကပ်နေစေရန် ညှိခြင်း
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -12,55 +12,15 @@ st.markdown("""
         background-color: #ffd700; padding: 12px; border-radius: 6px; 
         border-left: 8px solid #002d72; margin: 25px 0; color: black; font-weight: bold;
     }
-    
     div[data-testid="stContainer"] {
         background-color: white;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px;
-        padding: 10px !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        min-height: 190px; /* Card အမြင့် အားလုံးကို တစ်ပြေးညီဖြစ်စေရန် */
-    }
-    
-    .product-info-box {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        margin-top: 6px;
-        text-align: center;
-    }
-    
-    .product-title {
-        font-weight: 600; 
-        font-size: 13px; 
-        color: #1e293b; 
-        line-height: 1.3; 
-        display: -webkit-box; 
-        -webkit-line-clamp: 2; 
-        -webkit-box-orient: vertical; 
-        overflow: hidden; 
-        min-height: 34px;
-    }
-    
-    .product-price { 
-        font-size: 18px; 
-        font-weight: 800; 
-        color: #002d72; 
-    }
-    
-    .product-unit { 
-        font-size: 11px; 
-        font-weight: 400; 
-        color: #64748b; 
+        padding: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     </style>
 """, unsafe_allow_html=True)
-
-# သင့် Google Drive Folder ID
-DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
 
 @st.cache_data(ttl=300)
 def load_catalog_data():
@@ -75,88 +35,84 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # Google Sheet Column တကယ့်တည်ဆောက်ပုံအတိုင်း နာမည်ပေးခြင်း
-    base_columns = ['ID', 'Name', 'Myanmar_Name', 'Price', 'Image', 'Category']
-    df.columns = base_columns + list(df.columns[len(base_columns):])
-    
-    parsed_products = []
-    
-    for index, row in df.iterrows():
-        p_id = str(row['ID']).strip() if pd.notna(row['ID']) else ""
-        p_name = str(row['Name']).strip() if pd.notna(row['Name']) else ""
-        p_myanmar = str(row['Myanmar_Name']).strip() if pd.notna(row['Myanmar_Name']) else ""
-        
-        try:
-            p_price = float(row['Price'])
-        except:
-            p_price = 0.0
-            
-        p_category = str(row['Category']).strip() if pd.notna(row['Category']) else "Uncategorized"
-        if p_category.lower() == "nan" or p_category == "":
-            p_category = "Uncategorized"
-            
-        display_title = p_myanmar if (p_myanmar and p_myanmar.lower() != "nan") else p_name
-        
-        parsed_products.append({
-            "id": p_id,
-            "name": display_title,
-            "price": p_price,
-            "category": p_category
-        })
-        
-    pdf = pd.DataFrame(parsed_products)
+    df['ID'] = df['ID'].fillna("").astype(str)
+    df['Name'] = df['Name'].fillna("").astype(str)
+    df['Myanmar_Name'] = df['Myanmar_Name'].fillna("").astype(str)
+    df['Price'] = df['Price'].fillna(0).astype(float)
+    df['Image'] = df['Image'].fillna("").astype(str)  # ⚡ Sheet ထဲမှ Image အား တိုက်ရိုက်ဖတ်ခြင်း
+    df['Category'] = df['Category'].fillna("Uncategorized").astype(str)
 
-    # Filter UI
-    categories = ["All Categories"] + sorted(pdf['category'].unique().tolist())
+    # 📂 Category Filter
+    categories = ["All Categories"] + sorted(df['Category'].unique().tolist())
     selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
-    
-    # Search Box
-    search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
+
+    # 🔍 Search Box
+    search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန် (မြန်မာလိုဖြစ်စေ၊ English လိုဖြစ်စေ ရိုက်ရှာနိုင်ပါသည်)", placeholder="Type or ြမန်မာလို ရိုက်ရှာပါ...")
 
     if selected_category != "All Categories":
-        pdf = pdf[pdf['category'] == selected_category]
+        df = df[df['Category'] == selected_category]
 
     if search_query:
-        query = search_query.lower()
-        pdf = pdf[pdf['name'].str.lower().str.contains(query, na=False)]
+        is_myanmar = any('\u1000' <= char <= '\u109f' for char in search_query)
+        if is_myanmar:
+            try:
+                translated_query = GoogleTranslator(source='my', target='en').translate(search_query)
+                query = translated_query.lower()
+            except:
+                query = search_query.lower()
+        else:
+            query = search_query.lower()
+        df = df[df['Name'].str.lower().str.contains(query, na=False)]
 
-    total_items = len(pdf)
+    total_items = len(df)
     
     if total_items > 0:
+        product_list = []
+        for index, row in df.iterrows():
+            display_name = row['Myanmar_Name'] if row['Myanmar_Name'] else row['Name']
+            product_list.append({
+                "name": display_name, 
+                "price": row['Price'],
+                "image": row['Image']  # ⚡ Image ဒေတာ ထည့်သွင်းခြင်း
+            })
+
+        # --- 🎨 Grid ပြသခြင်းစနစ် (တစ်တန်းလျှင် ၇ ခု) ---
         st.markdown(f'<div class="section-banner"><h2>📦 Product Catalog - {selected_category} ({total_items} ခု)</h2></div>', unsafe_allow_html=True)
         
         cols_per_row = 7
-        for i in range(0, len(pdf), cols_per_row):
-            row_items = pdf.iloc[i : i + cols_per_row]
+        for i in range(0, len(product_list), cols_per_row):
+            row_items = product_list[i : i + cols_per_row]
             cols = st.columns(cols_per_row)
 
-            for idx, (_, prod) in enumerate(row_items.iterrows()):
+            for idx, prod in enumerate(row_items):
                 with cols[idx]:
                     with st.container():
-                        p_id = prod["id"]
-                        
-                        # ⚡ မူလစမ်းသပ်မှုအတိုင်း Drive Folder ID နှင့် Product ID (.png) အား သုံး၍ တိုက်ရိုက်ချိတ်ဆက်ခြင်း
-                        # (ဤ URL ပုံစံသည် ပထမအကြိမ် စမ်းသပ်မှုတွင် ကတ်ပြားပေါ်၌ အောင်မြင်စွာ တက်လာခဲ့သော ပုံစံစစ်စစ် ဖြစ်သည်)
-                        drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}={p_id}"
-                        
-                        # Streamlit Native Image tag ဖြင့်သာ အသန့်ရှင်းဆုံး ပြသခြင်း
-                        st.image(
-                            drive_img_url,
-                            use_container_width=True
-                        )
+                        # ⚡ FIXED IMAGE LOGIC: Google Sheet ထဲမှ ရလာသော Base64 Image ကို အမှန်ကန်ဆုံး ပြသခြင်း
+                        if prod['image'] and str(prod['image']).strip() != "":
+                            st.markdown(f"""
+                                <div style="text-align:center; height:110px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
+                                    <img src="data:image/png;base64,{prod['image']}" 
+                                         style="max-height:110px; max-width:100%; object-fit:contain; border-radius:6px;">
+                                </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown("""
+                                <div style="text-align:center; height:110px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
+                                    <img src="https://placehold.co/110x110/f1f5f9/94a3b8?text=No+Image" 
+                                         style="max-height:110px; max-width:100%; object-fit:contain; border-radius:6px;">
+                                </div>
+                            """, unsafe_allow_html=True)
 
+                        # ကုန်ပစ္စည်းအမည်
+                        st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center; margin-top:5px;">{prod["name"]}</div>', unsafe_allow_html=True)
+
+                        # ဈေးနှုန်း
                         try:
-                            price_str = f"{int(prod['price']):,}"
+                            price_str = f"{float(prod['price']):,.0f}"
                         except:
                             price_str = str(prod['price'])
 
-                        # အမည်နှင့် စျေးနှုန်း ကွက်တိကပ်လျက် တည်ဆောက်ပုံ
-                        st.markdown(f"""
-                            <div class="product-info-box">
-                                <div class="product-title">{prod['name']}</div>
-                                <div class="product-price">{price_str} <span class="product-unit">ks</span></div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-size:20px; font-weight:800; color:#002d72; text-align:center; margin-top:5px;">{price_str} <span style="font-size:12px; font-weight:400; color:#475569;">ks</span></div>', unsafe_allow_html=True)
     else:
         st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
 else:
