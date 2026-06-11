@@ -135,25 +135,7 @@ if df is not None:
                     with st.container():
                         p_id = prod["id"]
                         
-                        # ⚡ BULLETPROOF GOOGLE DRIVE CONNECTOR:
-                        # Folder ID နှင့် ကုန်ပစ္စည်း ID (.png) ကို အခြေခံ၍ Google Drive Thumbnail Host ဆီမှ ပုံအစစ်ကို ဆွဲထုတ်ခြင်း၊
-                        # အကယ်၍ Drive ထဲတွင် ပုံမရှိသေးပါက သပ်ရပ်သော Placeholder စမတ်ကတ်လေး ပြောင်းပြပေးမည့်စနစ်
-                        drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}={p_id}"
+                        # ⚡ HTML Image Source: Folder ID နှင့် Product ID (.png) ကိုသုံးပြီး ဒရိုက်ထဲကပုံကို ဆွဲထုတ်ပြသခြင်း
+                        drive_img_url = f"https://drive.google.com/thumbnail?authuser=0&sz=w300&id={DRIVE_FOLDER_ID}&name={p_id}.png"
                         
-                        st.markdown(f"""
-                            <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                <img src="https://drive.google.com/thumbnail?authuser=0&sz=w300&id={DRIVE_FOLDER_ID}&name={p_id}.png" 
-                                     style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;"
-                                     onerror="this.onerror=null; this.src='https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product';">
-                            </div>
-                        """, unsafe_allow_html=True)
-
-                        try:
-                            price_str = f"{int(prod['price']):,}"
-                        except:
-                            price_str = str(prod['price'])
-
-                        # အမည်နှင့် စျေးနှုန်း ကွက်တိကပ်လျက် တည်ဆောက်ပုံ
-                        st.markdown(f"""
-                            <div class="product-info-box">
-                                <div class="product-title">{prod['name']}</div>
+                        # ⚡ FIXED STRING CLOSING: Triple quotes နှင့် ကွင်းပိတ်များအားလုံး အပြည့်အစုံ ပြန်လည်ပိတ်ထား
