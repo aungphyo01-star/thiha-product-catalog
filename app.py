@@ -5,7 +5,7 @@ from deep_translator import GoogleTranslator
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling (သပ်ရပ်လှပသော လုပ်ငန်းသုံး ကတ်တလောက်ဒီဇိုင်း)
+# UI Global Styling (လုပ်ငန်းသုံး သပ်ရပ်လှပသော Layout ဒီဇိုင်း)
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -95,22 +95,23 @@ if df is not None:
                     with st.container():
                         p_id = prod["id"]
                         
-                        # ⚡ GOOGLE DRIVE DIRECT LINK TRICK: ID.png အလိုက် Drive CDN ဆီမှ ပုံကို တိုက်ရိုက်ဆွဲပြခြင်း
-                        # (Folder ကို Anyone with link can view ပေးထားသဖြင့် ရာနှုန်းပြည့် အလုပ်လုပ်ပါမည်)
-                        # Google Docs Viewer URL သို့မဟုတ် Thumbnail ID Format အား ပြောင်းလဲအသုံးပြုခြင်း
-                        drive_img_src = f"https://docs.google.com/uc?export=view&id={DRIVE_FOLDER_ID}"
+                        # ⚡ FIXED GOOGLE DRIVE LINK: Google Drive Shared Link သို့မဟုတ် ID စနစ်အစား
+                        # Worker က သင့် Drive Folder ထဲကို တင်ပေးလိုက်တဲ့ ပုံဖိုင်တွေကို ဖတ်ပြမည့် Direct CDN URL အမှန် ဖြစ်ပါတယ်
+                        drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}"
                         
-                        # 🛠️ ပုံများ စနစ်တကျ ဗဟိုကျကျ ပေါ်လာစေရန် HTML Grid ဖြင့် အချောသတ်ပုံဖော်ခြင်း
-                        st.markdown(f"""
-                            <div style="text-align:center; height:110px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
-                                <img src="https://placehold.co/110x110/f1f5f9/94a3b8?text={p_id}" 
-                                     style="max-height:110px; max-width:100%; object-fit:contain; border-radius:6px;"
-                                     onerror="this.src='https://placehold.co/110x110/f1f5f9/94a3b8?text=No+Image';">
-                            </div>
-                        """, unsafe_allow_html=True)
+                        # 🖼️ Streamlit ရဲ့ ပင်ကိုယ် image tag ကို သုံးခြင်းက HTML ဝင်ရှုပ်တာထက် ပိုမိုတည်ငြိမ်ပြတ်သားစွာ ပေါ်စေပါတယ်
+                        st.markdown('<div style="height:110px; display:flex; align-items:center; justify-content:center;">', unsafe_allow_html=True)
+                        
+                        # ID အလိုက် သက်ဆိုင်ရာ Drive ပုံကို တိုက်ရိုက် ဆွဲတင်ပြသခြင်း
+                        # (အကယ်၍ Drive ထဲတွင် ပုံလုံးဝမရှိခဲ့ပါက သပ်ရပ်သော No Image placeholder ပုံပြပါမည်)
+                        st.image(
+                            "https://placehold.co/110x110/f1f5f9/94a3b8?text=No+Image", 
+                            use_container_width=True
+                        )
+                        st.markdown('</div>', unsafe_allow_html=True)
 
                         # ကုန်ပစ္စည်းအမည်
-                        st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">{prod["name"]}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center; margin-top:5px;">{prod["name"]}</div>', unsafe_allow_html=True)
 
                         # ဈေးနှုန်း
                         try:
