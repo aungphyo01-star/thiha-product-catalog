@@ -22,7 +22,7 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 190px;
+        min-height: 190px; /* Card အမြင့် အားလုံးကို တစ်ပြေးညီဖြစ်စေရန် */
     }
     
     .product-info-box {
@@ -59,6 +59,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# သင့် Google Drive Folder ID
+DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
+
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
@@ -82,7 +85,6 @@ if df is not None:
         p_id = str(row['ID']).strip() if pd.notna(row['ID']) else ""
         p_name = str(row['Name']).strip() if pd.notna(row['Name']) else ""
         p_myanmar = str(row['Myanmar_Name']).strip() if pd.notna(row['Myanmar_Name']) else ""
-        p_img_id = str(row['Image']).strip() if pd.notna(row['Image']) else ""
         
         try:
             p_price = float(row['Price'])
@@ -99,7 +101,6 @@ if df is not None:
             "id": p_id,
             "name": display_title,
             "price": p_price,
-            "image_id": p_img_id,
             "category": p_category
         })
         
@@ -132,22 +133,17 @@ if df is not None:
             for idx, (_, prod) in enumerate(row_items.iterrows()):
                 with cols[idx]:
                     with st.container():
+                        p_id = prod["id"]
                         
-                        # ⚡ BULLETPROOF GOOGLE DRIVE EXPORT LINK:
-                        # Sheet ထဲက Image (E Column) ထဲမှာ ရှိနေမည့် Google Drive File ID ကိုသုံးပြီး တရားဝင် Direct Link ဖြင့် ပြသခြင်း၊
-                        # အကယ်၍ File ID မရှိပါက ပုံပျက်မထွက်စေဘဲ သပ်ရပ်သော Placeholder စမတ်ကတ်လေး ပြောင်းပြပေးမည့်စနစ်
-                        if prod["image_id"] and prod["image_id"].lower() != "nan" and prod["image_id"] != "":
-                            drive_img_url = f"https://docs.google.com/uc?export=view&id={prod['image_id']}"
-                        else:
-                            drive_img_url = "https://placehold.co/100x90/f1f5f9/94a3b8?text=📦+Product"
+                        # ⚡ မူလစမ်းသပ်မှုအတိုင်း Drive Folder ID နှင့် Product ID (.png) အား သုံး၍ တိုက်ရိုက်ချိတ်ဆက်ခြင်း
+                        # (ဤ URL ပုံစံသည် ပထမအကြိမ် စမ်းသပ်မှုတွင် ကတ်ပြားပေါ်၌ အောင်မြင်စွာ တက်လာခဲ့သော ပုံစံစစ်စစ် ဖြစ်သည်)
+                        drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}={p_id}"
                         
-                        st.markdown(f"""
-                            <div style="text-align:center; height:90px; display:flex; align-items:center; justify-content:center;">
-                                <img src="{drive_img_url}" 
-                                     style="max-height:90px; max-width:100%; object-fit:contain; border-radius:6px;"
-                                     onerror="this.onerror=null; this.src='https://placehold.co/100x90/f1f5f9/94a3b8?text=📦+Product';">
-                            </div>
-                        """, unsafe_allow_html=True)
+                        # Streamlit Native Image tag ဖြင့်သာ အသန့်ရှင်းဆုံး ပြသခြင်း
+                        st.image(
+                            drive_img_url,
+                            use_container_width=True
+                        )
 
                         try:
                             price_str = f"{int(prod['price']):,}"
