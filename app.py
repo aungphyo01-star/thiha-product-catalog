@@ -1,11 +1,6 @@
 import streamlit as st
 import pandas as pd
-import xmlrpc.client
-import ssl
 from deep_translator import GoogleTranslator
-
-# --- SSL Bypass ---
-ssl._create_default_https_context = ssl._create_unverified_context
 
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
@@ -21,16 +16,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Odoo ERP System Credentials (ဓာတ်ပုံများကို ကနဦး Live ဆွဲရန်သာ သုံးမည်) ---
-URL = "https://odoo.linklusion.co.jp"
-DB = "odoo15"
-USERNAME = "aungphyo01@gmail.com"
-PASSWORD = "f48f4bafa7c2b69d4156fc44e424182070c8287d"
-
-# ⚡ FIXED: သင့် Google Drive Folder ID အစစ်အား တိုက်ရိုက်ထည့်သွင်းထားပါသည်
+# ⚡ သင့် Google Drive Folder ID
 DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
 
-# --- Google Sheet မှ Data ဖတ်ယူမည့် Function ---
+# --- Google Sheet မှ Data Phတ်ယူမည့် Function ---
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
@@ -41,21 +30,6 @@ def load_catalog_data():
     except:
         return None
 
-# --- Odoo ထံမှ ဓာတ်ပုံများကို နောက်ကွယ်မှ အမြန်ဆုံး ဆွဲယူပေးမည့် High-Performance စနစ် ---
-@st.cache_data(ttl=600)
-def fetch_live_images(product_ids):
-    try:
-        common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
-        uid = common.authenticate(DB, USERNAME, PASSWORD, {})
-        models = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/object")
-        details = models.execute_kw(
-            DB, uid, PASSWORD, "product.template", "read",
-            [product_ids], {"fields": ["id", "image_128"]}
-        )
-        return {str(item["id"]): item.get("image_128", "") for item in details}
-    except:
-        return {}
-
 df = load_catalog_data()
 
 if df is not None:
@@ -65,11 +39,11 @@ if df is not None:
     df['Price'] = df['Price'].fillna(0).astype(float)
     df['Category'] = df['Category'].fillna("Uncategorized").astype(str)
 
-    # 📂 ၁။ Category Filter
+    # 📂 Category Filter
     categories = ["All Categories"] + sorted(df['Category'].unique().tolist())
     selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
 
-    # 🔍 ၂။ Search Box
+    # 🔍 Search Box
     search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန် (မြန်မာလိုဖြစ်စေ၊ English လိုဖြစ်စေ ရိုက်ရှာနိုင်ပါသည်)", placeholder="Type or ြမန်မာလို ရိုက်ရှာပါ...")
 
     if selected_category != "All Categories":
@@ -90,21 +64,15 @@ if df is not None:
     total_items = len(df)
     
     if total_items > 0:
-        # ⚡ မျက်နှာပြင်ပေါ်တွင် မြင်ရမည့် ပစ္စည်း ID များအတွက်သာ ပုံများကို Background မှ အမြန်ဆွဲယူခြင်း
-        visible_ids = df['ID'].dropna().astype(int).tolist() if 'ID' in df.columns else []
-        live_images = fetch_live_images(visible_ids) if visible_ids else {}
-
         product_list = []
         for index, row in df.iterrows():
             p_id = str(row['ID'])
             display_name = row['Myanmar_Name'] if row['Myanmar_Name'] else row['Name']
             
-            p_image = live_images.get(p_id, "")
-            
             product_list.append({
+                "id": p_id,
                 "name": display_name, 
-                "price": row['Price'],
-                "image": p_image
+                "price": row['Price']
             })
 
         # --- 🎨 Grid ပြသခြင်းစနစ် ---
@@ -122,11 +90,14 @@ if df is not None:
                 for idx, prod in enumerate(row_items):
                     with cols[idx]:
                         with st.container(border=True):
-                            # ⚡ အနောက်ကွယ်မှ ဆွဲယူထားသော ဓာတ်ပုံအား အမြန်ဆုံး ဉာဏ်ရည်မြင့် ဖော်ပြခြင်း
-                            if prod['image'] and str(prod['image']).strip() != "":
-                                st.markdown(f'<div style="text-align:center;"><img src="data:image/png;base64,{prod["image"]}" style="height:110px; object-fit:contain; margin-bottom:8px;"></div>', unsafe_allow_html=True)
-                            else:
-                                st.markdown('<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-bottom:8px; color:#94a3b8; font-size:11px;">No Image</div>', unsafe_allow_html=True)
+                            p_id = prod["id"]
+                            
+                            # ⚡ GOOGLE DRIVE CDN DIRECT LINK: Drive ထဲရှိ ပုံကို ကမ္ဘာလုံးဆိုင်ရာ Direct URL ဖြင့် အမြန်ဆုံးဆွဲပြခြင်း
+                            # (Drive Folder အား Anyone with link can view ပေးထားသဖြင့် 0.1 စက္ကန့်အတွင်း တန်းပွင့်ပါမည်)
+                            drive_image_url = f"https://thumbnail.image.asst.gdrive?id={DRIVE_FOLDER_ID}/{p_id}.png"
+                            
+                            # Streamlit HTML image embedded link
+                            st.markdown(f'<div style="text-align:center;"><img src="https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}" style="height:110px; object-fit:contain; margin-bottom:8px;" onerror="this.src=\'https://placehold.co/110x110/f1f5f9/94a3b8?text=No+Image\';"></div>', unsafe_allow_html=True)
 
                             st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">{prod["name"]}</div>', unsafe_allow_html=True)
 
