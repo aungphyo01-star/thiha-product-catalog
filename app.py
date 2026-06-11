@@ -38,22 +38,22 @@ def load_catalog_data():
     except:
         return None
 
-# --- ⚡ ဓာတ်ပုံများကိုသာ Odoo ထံမှ Direct ဆွဲယူပေးမည့် စမတ် Cache စနစ် ---
-@st.cache_data(ttl=300)
-def fetch_live_images(product_ids):
+# --- ⚡ HIGH-PERFORMANCE CACHE: ပစ္စည်း ID တစ်ခုချင်းစီ၏ ပုံများကို RAM ထဲတွင် အသင့်မှတ်သားထားသည့် စနစ် ---
+@st.cache_data(ttl=600)  # ပုံများကို ၁၀ မိနစ်အထိ RAM တွင် သိမ်းထားသဖြင့် အလွန်မြန်သွားပါမည်
+def fetch_single_image(product_id):
     try:
         common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
         uid = common.authenticate(DB, USERNAME, PASSWORD, {})
         models = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/object")
         
-        # Odoo ထံမှ image_128 (သို့မဟုတ် ပုံမရှိပါက image_256) ကို စစ်ဆေးဖတ်ယူခြင်း
+        # သက်ဆိုင်ရာ ပစ္စည်းတစ်ခုတည်း၏ image_128 ကိုသာ ခေါ်ယူသည်
         details = models.execute_kw(
             DB, uid, PASSWORD, "product.template", "read",
-            [product_ids], {"fields": ["id", "image_128"]}
+            [[int(product_id)]], {"fields": ["image_128"]}
         )
-        return {str(item["id"]): item.get("image_128", "") for item in details}
+        return details[0].get("image_128", "") if details else ""
     except:
-        return {}
+        return ""
 
 df = load_catalog_data()
 
@@ -89,17 +89,13 @@ if df is not None:
     total_items = len(df)
     
     if total_items > 0:
-        # ⚡ မျက်နှာပြင်ပေါ်တွင် မြင်ရမည့် ပစ္စည်း ID များကို သီးသန့်ထုတ်ယူပြီး Odoo ထံမှ ပုံလှမ်းဆွဲခြင်း
-        visible_ids = df['ID'].dropna().astype(int).tolist()
-        live_images = fetch_live_images(visible_ids) if visible_ids else {}
-
         product_list = []
         for index, row in df.iterrows():
             p_id = str(row['ID'])
             display_name = row['Myanmar_Name'] if row['Myanmar_Name'] else row['Name']
             
-            # Live Image Dictionary ထဲမှ ပုံကို ထုတ်ယူခြင်း
-            p_image = live_images.get(p_id, "")
+            # ⚡ ဓာတ်ပုံကို RAM Memory ထံမှ တိုက်ရိုက်ဆွဲယူခြင်း (ရှိပြီးသားပုံဆိုလျှင် 0.001 စက္ကန့်သာကြာမည်)
+            p_image = fetch_single_image(p_id) if p_id else ""
             
             product_list.append({
                 "name": display_name, 
@@ -122,7 +118,6 @@ if df is not None:
                 for idx, prod in enumerate(row_items):
                     with cols[idx]:
                         with st.container(border=True):
-                            # ⚡ Odoo ထံမှ ရလာသော Live Base64 Image အား ပေါ်အောင် ချပြခြင်း
                             if prod['image'] and str(prod['image']).strip() != "":
                                 st.markdown(f'<div style="text-align:center;"><img src="data:image/png;base64,{prod["image"]}" style="height:110px; object-fit:contain; margin-bottom:8px;"></div>', unsafe_allow_html=True)
                             else:
