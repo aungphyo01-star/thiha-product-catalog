@@ -6,7 +6,7 @@ from deep_translator import GoogleTranslator
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# ⚡ UI Global Styling: Card အတွင်းပိုင်း အကွာအဝေးများကို ကျစ်လျစ်သပ်ရပ်အောင် ပြင်ဆင်ခြင်း
+# UI Global Styling
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -27,7 +27,7 @@ st.markdown("""
     .product-info-box {
         display: flex;
         flex-direction: column;
-        gap: 2px; /* ⚡ စာသားနှင့် ဈေးနှုန်းကြား အကွာအဝေးကို ကွက်တိ ကပ်သွားစေရန် ညှိခြင်း */
+        gap: 2px;
         margin-top: 4px;
         text-align: center;
     }
@@ -54,70 +54,54 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # Column Header များအား သတ်မှတ်ခြင်း
-    df.columns = ['ID', 'Name', 'Myanmar_Name', 'Price_Column', 'Image'] + list(df.columns[5:])
+    # ကော်လံအမည်များကို Sheet တည်ဆောက်ပုံအတိုင်း သတ်မှတ်ခြင်း
+    df.columns = ['ID', 'Name', 'Myanmar_Name', 'Category_Column', 'Image'] + list(df.columns[5:])
     
     parsed_products = []
     
-    # ⚡ DATA EXTRACTOR LOGIC: Name ထဲမှ ဈေးနှုန်းကို ဖြတ်ထုတ်ပြီး Price Column မှ Category ကို သန့်စင်ခြင်း
     for index, row in df.iterrows():
-        raw_name = str(row['Name']).strip()
-        raw_category = str(row['Price_Column']).strip() # လက်ရှိ Sheet ထဲတွင် Price နေရာ၌ Category ရောက်နေသည်
-        myanmar_name = str(row['Myanmar_Name']).strip() if pd.notna(row['Myanmar_Name']) else ""
+        p_id = str(row['ID']).strip()
+        p_name = str(row['Name']).strip()
+        raw_price_text = str(row['Myanmar_Name']).strip() # ⚡ ဈေးနှုန်းစာသားသည် လက်ရှိတွင် Myanmar_Name ကော်လံထဲ၌ ရှိနေပါသည်
+        raw_category = str(row['Category_Column']).strip()
         
-        # ၁။ Name စာသားထဲမှ ဈေးနှုန်းဂဏန်းကို ရှာဖွေဖြတ်ထုတ်ခြင်း (ဥပမာ - "9,875 ks" သို့မဟုတ် "834")
+        # ⚡ FIXED PRICE EXTRACTION LOGIC: Myanmar_Name ကော်လံထဲမှ ဂဏန်းများကို ဈေးနှုန်းအဖြစ် ပြောင်းလဲခြင်း
         price_found = 0.0
-        clean_name = raw_name
-        
-        price_match = re.search(r'([\d,]+)\s*(?:ks|Ks|KS)?$', raw_name)
-        if price_match:
-            try:
-                price_str = price_match.group(1).replace(',', '')
-                price_found = float(price_str)
-                # နာမည်ထဲမှ ဈေးနှုန်းစာသားကို ဖယ်ထုတ်၍ သန့်စင်ခြင်း
-                clean_name = raw_name[:price_match.start()].strip()
-            except:
-                pass
-                
-        # ၂။ Category Path ကြီးအား အနောက်ဆုံးပိတ်စာလုံးသာ ဖြစ်အောင် သန့်စင်ခြင်း (All / Saleable / Stationery -> Stationery)
+        if pd.notna(row['Myanmar_Name']) and raw_price_text != "":
+            # စာသားထဲမှ ဂဏန်းနှင့် ကော်မာများကိုသာ ဇကာတင်စစ်ထုတ်ယူခြင်း (ဥပမာ - "9,875 ks" -> "9875")
+            digits_only = re.sub(r'[^\d]', '', raw_price_text)
+            if digits_only:
+                try:
+                    price_found = float(digits_only)
+                except:
+                    pass
+                    
+        # Category Path အား အနောက်ဆုံးပိတ် စာလုံးသန့်သန့်သာ ယူခြင်း
         clean_category = "Uncategorized"
         if raw_category and "/" in raw_category:
             clean_category = [item.strip() for item in raw_category.split("/")][-1]
         elif raw_category:
             clean_category = raw_category
             
-        display_title = myanmar_name if myanmar_name else clean_name
-        
         parsed_products.append({
-            "id": str(row['ID']),
-            "name": display_title,
+            "id": p_id,
+            "name": p_name,
             "price": price_found,
             "category": clean_category
         })
         
-    # DataFrame အသစ်အဖြစ် ပြန်လည်တည်ဆောက်ခြင်း
     pdf = pd.DataFrame(parsed_products)
 
-    # 📂 Category Filter
+    # Filter & Search UI
     categories = ["All Categories"] + sorted(pdf['category'].unique().tolist())
     selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
-    
-    # 🔍 Search Box
-    search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type or ြမန်မာလို ရိုက်ရှာပါ...")
+    search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
 
     if selected_category != "All Categories":
         pdf = pdf[pdf['category'] == selected_category]
 
     if search_query:
-        is_myanmar = any('\u1000' <= char <= '\u109f' for char in search_query)
-        if is_myanmar:
-            try:
-                translated_query = GoogleTranslator(source='my', target='en').translate(search_query)
-                query = translated_query.lower()
-            except:
-                query = search_query.lower()
-        else:
-            query = search_query.lower()
+        query = search_query.lower()
         pdf = pdf[pdf['name'].str.lower().str.contains(query, na=False)]
 
     total_items = len(pdf)
@@ -133,7 +117,7 @@ if df is not None:
             for idx, (_, prod) in enumerate(row_items.iterrows()):
                 with cols[idx]:
                     with st.container():
-                        # 🖼️ Placeholder Image Box
+                        # Playground Card Box
                         st.markdown(f"""
                             <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; background-color:#f1f5f9; border-radius:6px;">
                                 <span style="color:#94a3b8; font-size:12px; font-weight:500;">📦 Product</span>
@@ -145,7 +129,7 @@ if df is not None:
                         except:
                             price_str = str(prod['price'])
 
-                        # ⚡ အမည်နှင့် ဈေးနှုန်းကို ပူးကပ်စွာ ထုတ်ပြခြင်း
+                        # ကွက်တိ ညှိပြီးသား Layout
                         st.markdown(f"""
                             <div class="product-info-box">
                                 <div class="product-title">{prod['name']}</div>
