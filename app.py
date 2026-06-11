@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from deep_translator import GoogleTranslator
 
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
@@ -12,6 +13,8 @@ st.markdown("""
         background-color: #ffd700; padding: 12px; border-radius: 6px; 
         border-left: 8px solid #002d72; margin: 25px 0; color: black; font-weight: bold;
     }
+    
+    /* Product Card Layout တစ်ခုချင်းစီအား တစ်ပြေးညီ သပ်ရပ်စေရန် ညှိခြင်း */
     div[data-testid="stContainer"] {
         background-color: white;
         border: 1px solid #e2e8f0 !important;
@@ -21,33 +24,40 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 160px;
+        min-height: 150px; /* ⚡ Card အမြင့်ကို ကျစ်လျစ်အောင် အနည်းငယ် လျှော့ချခြင်း */
     }
-    .product-image-box {
-        text-align: center; 
-        height: 50px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        background-color: #f1f5f9; 
-        border-radius: 6px;
-        color: #94a3b8;
-        font-size: 18px;
-    }
+    
     .product-info-box {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 2px; /* ⚡ နာမည်နှင့် စျေးနှုန်းကို ကွက်တိ ပူးကပ်သွားစေရန် */
         margin-top: 4px;
         text-align: center;
     }
+    
     .product-title {
-        font-weight: 600; font-size: 13px; color: #1e293b; line-height: 1.3; 
-        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
-        overflow: hidden; min-height: 34px;
+        font-weight: 600; 
+        font-size: 13px; 
+        color: #1e293b; 
+        line-height: 1.3; 
+        display: -webkit-box; 
+        -webkit-line-clamp: 2; 
+        -webkit-box-orient: vertical; 
+        overflow: hidden; 
+        min-height: 34px;
     }
-    .product-price { font-size: 18px; font-weight: 800; color: #002d72; }
-    .product-unit { font-size: 11px; font-weight: 400; color: #64748b; }
+    
+    .product-price { 
+        font-size: 18px; 
+        font-weight: 800; 
+        color: #002d72; 
+    }
+    
+    .product-unit { 
+        font-size: 11px; 
+        font-weight: 400; 
+        color: #64748b; 
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -64,7 +74,7 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # ⚡ BULLETPROOF COLUMN FIX: ကော်လံအရေအတွက် မည်မျှပဲရှိရှိ ပထမဆုံး ၆ ကော်လံကို အတိအကျ နာမည်ခွဲပေးခြင်း
+    # Google Sheet ၏ ကော်လံဖွဲ့စည်းပုံအတိုင်း အမည်ပေးခြင်း
     base_columns = ['ID', 'Name', 'Myanmar_Name', 'Price', 'Image', 'Category']
     df.columns = base_columns + list(df.columns[len(base_columns):])
     
@@ -75,7 +85,6 @@ if df is not None:
         p_name = str(row['Name']).strip() if pd.notna(row['Name']) else ""
         p_myanmar = str(row['Myanmar_Name']).strip() if pd.notna(row['Myanmar_Name']) else ""
         
-        # စျေးနှုန်းကော်လံ (D) ကို တိုက်ရိုက်ဂဏန်းအဖြစ် ယူခြင်း
         try:
             p_price = float(row['Price'])
         except:
@@ -85,7 +94,6 @@ if df is not None:
         if p_category.lower() == "nan" or p_category == "":
             p_category = "Uncategorized"
             
-        # Myanmar_Name ကော်လံ လောလောဆယ် ကွက်လပ်ဖြစ်နေပါက Name ကို တိုက်ရိုက်သုံးမည်
         display_title = p_myanmar if (p_myanmar and p_myanmar.lower() != "nan") else p_name
         
         parsed_products.append({
@@ -97,11 +105,11 @@ if df is not None:
         
     pdf = pd.DataFrame(parsed_products)
 
-    # 📂 Category Filter UI
+    # Filter UI
     categories = ["All Categories"] + sorted(pdf['category'].unique().tolist())
     selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
     
-    # 🔍 Search Box
+    # Search Box
     search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
 
     if selected_category != "All Categories":
@@ -124,20 +132,19 @@ if df is not None:
             for idx, (_, prod) in enumerate(row_items.iterrows()):
                 with cols[idx]:
                     with st.container():
-                        # 🖼️ သပ်ရပ်လှပသော Box Layout
-                        st.markdown(f"""
-                            <div class="product-image-box">
-                                📦
-                            </div>
-                        """, unsafe_allow_html=True)
+                        # ⚡ FIXED IMAGE SYSTEM: နေရာရှုပ်နေသော HTML image-box ကြီးအား လုံးဝဖြုတ်ချပြီး
+                        # Streamlit Native စနစ်တစ်ခုတည်းဖြင့် သပ်ရပ်သော Placeholder အကွက်လေးအား ထိပ်ဆုံးတွင် ထည့်သွင်းခြင်း
+                        st.image(
+                            "https://placehold.co/100x60/f1f5f9/94a3b8?text=Product", 
+                            use_container_width=True
+                        )
 
-                        # စျေးနှုန်းအား ကော်မာဖြတ်ပြခြင်း
                         try:
                             price_str = f"{int(prod['price']):,}"
                         except:
                             price_str = str(prod['price'])
 
-                        # အမည်နှင့် စျေးနှုန်း ကပ်လျက်ပြသခြင်း
+                        # ⚡ အမည်နှင့် စျေးနှုန်း ကပ်လျက်ပြသခြင်း
                         st.markdown(f"""
                             <div class="product-info-box">
                                 <div class="product-title">{prod['name']}</div>
