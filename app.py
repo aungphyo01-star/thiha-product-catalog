@@ -59,9 +59,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# သင့် Google Drive Folder ID (ဤ Folder ကို Anyone with link can view ပေးထားရန် လိုအပ်ပါသည်)
-DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
-
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
@@ -85,6 +82,7 @@ if df is not None:
         p_id = str(row['ID']).strip() if pd.notna(row['ID']) else ""
         p_name = str(row['Name']).strip() if pd.notna(row['Name']) else ""
         p_myanmar = str(row['Myanmar_Name']).strip() if pd.notna(row['Myanmar_Name']) else ""
+        p_img_id = str(row['Image']).strip() if pd.notna(row['Image']) else ""
         
         try:
             p_price = float(row['Price'])
@@ -101,6 +99,7 @@ if df is not None:
             "id": p_id,
             "name": display_title,
             "price": p_price,
+            "image_id": p_img_id,
             "category": p_category
         })
         
@@ -133,11 +132,14 @@ if df is not None:
             for idx, (_, prod) in enumerate(row_items.iterrows()):
                 with cols[idx]:
                     with st.container():
-                        p_id = prod["id"]
                         
-                        # ⚡ FIXED DRIVE CONNECTOR: Drive Folder ID နှင့် Product ID (.png) ကိုသုံးပြီး တိုက်ရိုက်ချိတ်ဆက်ခြင်း
-                        # သင့် Google Drive ထဲရှိ ပုံဖိုင်များကို Live Web URL အဖြစ် ပြောင်းလဲပြသပေးမည့် တရားဝင်ပုံစံဖြစ်သည်
-                        drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}={p_id}"
+                        # ⚡ BULLETPROOF GOOGLE DRIVE EXPORT LINK:
+                        # Sheet ထဲက Image (E Column) ထဲမှာ ရှိနေမည့် Google Drive File ID ကိုသုံးပြီး တရားဝင် Direct Link ဖြင့် ပြသခြင်း၊
+                        # အကယ်၍ File ID မရှိပါက ပုံပျက်မထွက်စေဘဲ သပ်ရပ်သော Placeholder စမတ်ကတ်လေး ပြောင်းပြပေးမည့်စနစ်
+                        if prod["image_id"] and prod["image_id"].lower() != "nan" and prod["image_id"] != "":
+                            drive_img_url = f"https://docs.google.com/uc?export=view&id={prod['image_id']}"
+                        else:
+                            drive_img_url = "https://placehold.co/100x90/f1f5f9/94a3b8?text=📦+Product"
                         
                         st.markdown(f"""
                             <div style="text-align:center; height:90px; display:flex; align-items:center; justify-content:center;">
