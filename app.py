@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from deep_translator import GoogleTranslator
 
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
@@ -14,7 +13,6 @@ st.markdown("""
         border-left: 8px solid #002d72; margin: 25px 0; color: black; font-weight: bold;
     }
     
-    /* Product Card Layout တစ်ခုချင်းစီအား တစ်ပြေးညီ သပ်ရပ်စေရန် ညှိခြင်း */
     div[data-testid="stContainer"] {
         background-color: white;
         border: 1px solid #e2e8f0 !important;
@@ -24,14 +22,14 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 150px; /* ⚡ Card အမြင့်ကို ကျစ်လျစ်အောင် အနည်းငယ် လျှော့ချခြင်း */
+        min-height: 190px;
     }
     
     .product-info-box {
         display: flex;
         flex-direction: column;
-        gap: 2px; /* ⚡ နာမည်နှင့် စျေးနှုန်းကို ကွက်တိ ပူးကပ်သွားစေရန် */
-        margin-top: 4px;
+        gap: 2px;
+        margin-top: 6px;
         text-align: center;
     }
     
@@ -61,6 +59,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# သင့် Google Drive Folder ID
+DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
+
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
@@ -74,7 +75,7 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # Google Sheet ၏ ကော်လံဖွဲ့စည်းပုံအတိုင်း အမည်ပေးခြင်း
+    # Google Sheet Column တကယ့်တည်ဆောက်ပုံအတိုင်း နာမည်ပေးခြင်း
     base_columns = ['ID', 'Name', 'Myanmar_Name', 'Price', 'Image', 'Category']
     df.columns = base_columns + list(df.columns[len(base_columns):])
     
@@ -132,19 +133,26 @@ if df is not None:
             for idx, (_, prod) in enumerate(row_items.iterrows()):
                 with cols[idx]:
                     with st.container():
-                        # ⚡ FIXED IMAGE SYSTEM: နေရာရှုပ်နေသော HTML image-box ကြီးအား လုံးဝဖြုတ်ချပြီး
-                        # Streamlit Native စနစ်တစ်ခုတည်းဖြင့် သပ်ရပ်သော Placeholder အကွက်လေးအား ထိပ်ဆုံးတွင် ထည့်သွင်းခြင်း
-                        st.image(
-                            "https://placehold.co/100x60/f1f5f9/94a3b8?text=Product", 
-                            use_container_width=True
-                        )
+                        p_id = prod["id"]
+                        
+                        # ⚡ DRIVE DYNAMIC IMAGE SOURCE: Product ID အလိုက် Drive ထဲမှ ပုံကို တိုက်ရိုက်ဆွဲထုတ်ခြင်း၊ 
+                        # ပုံမရှိပါက Error မတက်ဘဲ Placeholder စမတ်ကတ်လေး ပြောင်းပြပေးမည့်စနစ်
+                        drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}={p_id}"
+                        
+                        st.markdown(f"""
+                            <div style="text-align:center; height:90px; display:flex; align-items:center; justify-content:center;">
+                                <img src="{drive_img_url}" 
+                                     style="max-height:90px; max-width:100%; object-fit:contain; border-radius:6px;"
+                                     onerror="this.onerror=null; this.src='https://placehold.co/100x90/f1f5f9/94a3b8?text=📦+Product';">
+                            </div>
+                        """, unsafe_allow_html=True)
 
                         try:
                             price_str = f"{int(prod['price']):,}"
                         except:
                             price_str = str(prod['price'])
 
-                        # ⚡ အမည်နှင့် စျေးနှုန်း ကပ်လျက်ပြသခြင်း
+                        # အမည်နှင့် စျေးနှုန်း ကွက်တိကပ်လျက် တည်ဆောက်ပုံ
                         st.markdown(f"""
                             <div class="product-info-box">
                                 <div class="product-title">{prod['name']}</div>
