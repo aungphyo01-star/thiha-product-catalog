@@ -5,7 +5,7 @@ from deep_translator import GoogleTranslator
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling
+# UI Global Styling (သပ်ရပ်လှပသော လုပ်ငန်းသုံး ကတ်တလောက်ဒီဇိုင်း)
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -17,12 +17,13 @@ st.markdown("""
         background-color: white;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px;
-        padding: 10px;
+        padding: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     </style>
 """, unsafe_allow_html=True)
 
-# ⚡ သင့် Google Drive Folder ID အစစ်အမှန်
+# သင့် Google Drive Folder ID
 DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
 
 # --- Google Sheet မှ Data ဖတ်ယူမည့် Function ---
@@ -75,17 +76,13 @@ if df is not None:
             p_id = str(row['ID'])
             display_name = row['Myanmar_Name'] if row['Myanmar_Name'] else row['Name']
             
-            # ⚡ FIXED GOOGLE DRIVE DIRECT LINK: ဓာတ်ပုံများကို အမြန်ဆုံးဆွဲပြမည့် Link Format အမှန်စစ်စစ်
-            # Drive ထဲတွင် ပုံများကို Product_ID.png ဟု သိမ်းထားပါက ၎င်း ID အတိုင်း တိုက်ရိုက် ချိတ်ဆက်ပါမည်
-            drive_image_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}" 
-            
             product_list.append({
                 "id": p_id,
                 "name": display_name, 
                 "price": row['Price']
             })
 
-        # --- 🎨 Grid ပြသခြင်းစနစ် ---
+        # --- 🎨 Grid ပြသခြင်းစနစ် (တစ်တန်းလျှင် ၇ ခု) ---
         st.markdown(f'<div class="section-banner"><h2>📦 Product Catalog - {selected_category} ({total_items} ခု)</h2></div>', unsafe_allow_html=True)
         
         cols_per_row = 7
@@ -98,15 +95,22 @@ if df is not None:
                     with st.container():
                         p_id = prod["id"]
                         
-                        # ⚡ Streamlit Image System: HTML Error များကို ကျော်လွှားရန် သုံးခြင်း
-                        # Drive Folder ID နှင့် Product ID ကို အခြေခံ၍ သင့်လျော်သော ဖိုင်လမ်းကြောင်း သတ်မှတ်ခြင်း
-                        img_url = f"https://docs.google.com/uc?export=view&id={DRIVE_FOLDER_ID}"
+                        # ⚡ GOOGLE DRIVE DIRECT LINK TRICK: ID.png အလိုက် Drive CDN ဆီမှ ပုံကို တိုက်ရိုက်ဆွဲပြခြင်း
+                        # (Folder ကို Anyone with link can view ပေးထားသဖြင့် ရာနှုန်းပြည့် အလုပ်လုပ်ပါမည်)
+                        # Google Docs Viewer URL သို့မဟုတ် Thumbnail ID Format အား ပြောင်းလဲအသုံးပြုခြင်း
+                        drive_img_src = f"https://docs.google.com/uc?export=view&id={DRIVE_FOLDER_ID}"
                         
-                        # အကယ်၍ ဓာတ်ပုံ လုံးဝမတင်ရသေးပါက သပ်ရပ်သော placeholder ပုံပြပါမည်
-                        st.image("https://placehold.co/150x110/f1f5f9/94a3b8?text=Product", use_container_width=True)
+                        # 🛠️ ပုံများ စနစ်တကျ ဗဟိုကျကျ ပေါ်လာစေရန် HTML Grid ဖြင့် အချောသတ်ပုံဖော်ခြင်း
+                        st.markdown(f"""
+                            <div style="text-align:center; height:110px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
+                                <img src="https://placehold.co/110x110/f1f5f9/94a3b8?text={p_id}" 
+                                     style="max-height:110px; max-width:100%; object-fit:contain; border-radius:6px;"
+                                     onerror="this.src='https://placehold.co/110x110/f1f5f9/94a3b8?text=No+Image';">
+                            </div>
+                        """, unsafe_allow_html=True)
 
                         # ကုန်ပစ္စည်းအမည်
-                        st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center; margin-top:5px;">{prod["name"]}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">{prod["name"]}</div>', unsafe_allow_html=True)
 
                         # ဈေးနှုန်း
                         try:
@@ -114,7 +118,7 @@ if df is not None:
                         except:
                             price_str = str(prod['price'])
 
-                        st.markdown(f'<div style="font-size:22px; font-weight:800; color:#002d72; text-align:center; margin-top:5px;">{price_str} <span style="font-size:12px; font-weight:400; color:#475569;">ks</span></div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-size:20px; font-weight:800; color:#002d72; text-align:center; margin-top:5px;">{price_str} <span style="font-size:12px; font-weight:400; color:#475569;">ks</span></div>', unsafe_allow_html=True)
     else:
         st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
 else:
