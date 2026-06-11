@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
+import xmlrpc.client
+import ssl
 from deep_translator import GoogleTranslator
+
+# --- SSL Bypass ---
+ssl._create_default_https_context = ssl._create_unverified_context
 
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
@@ -16,6 +21,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- Odoo ERP System Credentials ---
+URL = "https://odoo.linklusion.co.jp"
+DB = "odoo15"
+USERNAME = "aungphyo01@gmail.com"
+PASSWORD = "f48f4bafa7c2b69d4156fc44e424182070c8287d"
+
 # --- Google Sheet မှ Data ဖတ်ယူမည့် Function ---
 @st.cache_data(ttl=300)
 def load_catalog_data():
@@ -27,15 +38,30 @@ def load_catalog_data():
     except:
         return None
 
+# --- ⚡ ဓာတ်ပုံများကိုသာ Odoo ထံမှ Direct ဆွဲယူပေးမည့် စမတ် Cache စနစ် ---
+@st.cache_data(ttl=300)
+def fetch_live_images(product_ids):
+    try:
+        common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
+        uid = common.authenticate(DB, USERNAME, PASSWORD, {})
+        models = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/object")
+        
+        # Odoo ထံမှ image_128 (သို့မဟုတ် ပုံမရှိပါက image_256) ကို စစ်ဆေးဖတ်ယူခြင်း
+        details = models.execute_kw(
+            DB, uid, PASSWORD, "product.template", "read",
+            [product_ids], {"fields": ["id", "image_128"]}
+        )
+        return {str(item["id"]): item.get("image_128", "") for item in details}
+    except:
+        return {}
+
 df = load_catalog_data()
 
 if df is not None:
-    # Google Sheet ထံမှ ဒေတာတိုင်များ သန့်စင်ခြင်း
     df['ID'] = df['ID'].fillna("").astype(str)
     df['Name'] = df['Name'].fillna("").astype(str)
     df['Myanmar_Name'] = df['Myanmar_Name'].fillna("").astype(str)
     df['Price'] = df['Price'].fillna(0).astype(float)
-    df['Image'] = df['Image'].fillna("").astype(str)  # ⚡ Image တိုင်အား ဖတ်ယူခြင်း
     df['Category'] = df['Category'].fillna("Uncategorized").astype(str)
 
     # 📂 ၁။ Category Filter
@@ -45,11 +71,9 @@ if df is not None:
     # 🔍 ၂။ Search Box
     search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန် (မြန်မာလိုဖြစ်စေ၊ English လိုဖြစ်စေ ရိုက်ရှာနိုင်ပါသည်)", placeholder="Type or ြမန်မာလို ရိုက်ရှာပါ...")
 
-    # Category စစ်ထုတ်ခြင်း Logic
     if selected_category != "All Categories":
         df = df[df['Category'] == selected_category]
 
-    # Search ရှာဖွေခြင်း Logic
     if search_query:
         is_myanmar = any('\u1000' <= char <= '\u109f' for char in search_query)
         if is_myanmar:
@@ -60,23 +84,30 @@ if df is not None:
                 query = search_query.lower()
         else:
             query = search_query.lower()
-            
         df = df[df['Name'].str.lower().str.contains(query, na=False)]
 
     total_items = len(df)
     
     if total_items > 0:
+        # ⚡ မျက်နှာပြင်ပေါ်တွင် မြင်ရမည့် ပစ္စည်း ID များကို သီးသန့်ထုတ်ယူပြီး Odoo ထံမှ ပုံလှမ်းဆွဲခြင်း
+        visible_ids = df['ID'].dropna().astype(int).tolist()
+        live_images = fetch_live_images(visible_ids) if visible_ids else {}
+
         product_list = []
         for index, row in df.iterrows():
+            p_id = str(row['ID'])
             display_name = row['Myanmar_Name'] if row['Myanmar_Name'] else row['Name']
+            
+            # Live Image Dictionary ထဲမှ ပုံကို ထုတ်ယူခြင်း
+            p_image = live_images.get(p_id, "")
             
             product_list.append({
                 "name": display_name, 
                 "price": row['Price'],
-                "image": row['Image']  # ⚡ ဓာတ်ပုံဒေတာအား ထည့်သွင်းခြင်း
+                "image": p_image
             })
 
-        # --- 🎨 Grid ပြသခြင်းစနစ် (တစ်တန်းလျှင် ၇ ခု) ---
+        # --- 🎨 Grid ပြသခြင်းစနစ် ---
         def display_grid(p_set, title, icon):
             st.markdown(f'<div class="section-banner"><h2>{icon} {title} - {selected_category} ({total_items} ခု)</h2></div>', unsafe_allow_html=True)
             if not p_set:
@@ -91,16 +122,14 @@ if df is not None:
                 for idx, prod in enumerate(row_items):
                     with cols[idx]:
                         with st.container(border=True):
-                            # ⚡ FIXED: Google Sheet ထဲမှ ပါလာသော ပစ္စည်းဓာတ်ပုံအား ဖော်ပြခြင်း
-                            if prod['image'] and prod['image'].strip() != "":
+                            # ⚡ Odoo ထံမှ ရလာသော Live Base64 Image အား ပေါ်အောင် ချပြခြင်း
+                            if prod['image'] and str(prod['image']).strip() != "":
                                 st.markdown(f'<div style="text-align:center;"><img src="data:image/png;base64,{prod["image"]}" style="height:110px; object-fit:contain; margin-bottom:8px;"></div>', unsafe_allow_html=True)
                             else:
                                 st.markdown('<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-bottom:8px; color:#94a3b8; font-size:11px;">No Image</div>', unsafe_allow_html=True)
 
-                            # ကုန်ပစ္စည်းအမည်
                             st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">{prod["name"]}</div>', unsafe_allow_html=True)
 
-                            # ဈေးနှုန်း
                             try:
                                 price_str = f"{float(prod['price']):,.0f}"
                             except:
