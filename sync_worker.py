@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 import json
 import base64
+import time
 
 # --- SSL Bypass ---
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -24,12 +25,11 @@ DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
 DRIVE_ACCESS_TOKEN = "ya29.a0AT3oNZ-5aNq7ejXPP2QngSg4moRSMbQ5cB10B1ZGnvJcgc3FkrxwawqFXkjYeq9wrXntKUGoBKb2YPXaK-_9gFKnTx7kCHGWsQm8F5OBQHp-6517jT3QqD51oBqGnuOF9ASkvb4gNeyh7o5VigugEn2tr2aYcHNf8tTXZaQAc3oTYtGm_HkM4cXI6h9B7at9OC_thuIaCgYKAdcSARcSFQHGX2Miko3PuvFtNoU1NeWCTqIzgg0206"
 
 def upload_to_drive_direct(p_id, base64_image):
-    """ Apps Script ကို လုံးဝကျော်ပြီး Google Drive API v3 ထံ Multipart တိုက်ရိုက် Upload တင်သည့်စနစ် """
+    """ Google Drive API v3 ထံ Multipart တိုက်ရိုက် Upload တင်သည့်စနစ် """
     if not base64_image or str(base64_image).strip() == "":
         return None
     try:
         image_bytes = base64.b64decode(base64_image)
-        
         metadata = {
             "name": f"{p_id}.png",
             "parents": [DRIVE_FOLDER_ID]
@@ -40,7 +40,6 @@ def upload_to_drive_direct(p_id, base64_image):
         }
         headers = {"Authorization": f"Bearer {DRIVE_ACCESS_TOKEN}"}
         
-        # Google Server ဆီ တိုက်ရိုက်ပို့ခြင်း (Apps Script Permissions များနှင့် လုံးဝမသက်ဆိုင်တော့ပါ)
         res = requests.post(
             "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", 
             headers=headers, 
@@ -53,15 +52,35 @@ def upload_to_drive_direct(p_id, base64_image):
         return None
 
 def sync():
-    print("🔄 Odoo Production ERP ထံမှ Live Data များနှင့် ဓာတ်ပုံများကို စတင်ဆွဲယူနေပါသည်...")
+    print("🔄 Odoo Production ERP ထံမှ Live Data များနှင့် ဓာတ်ပုံများကို အပိုင်းလိုက်ခွဲ၍ စတင်ဆွဲယူနေပါသည်...")
     try:
         common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
         uid = common.authenticate(DB, USERNAME, PASSWORD, {})
         models = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/object")
         
+        # ၁။ ရောင်းချမည့် ပစ္စည်း ID စာရင်းအားလုံးကို အရင်ဦးစွာ ရှာဖွေယူခြင်း
         product_ids = models.execute_kw(DB, uid, PASSWORD, "product.template", "search", [[("sale_ok", "=", True)]], {"limit": 2000})
-        products = models.execute_kw(DB, uid, PASSWORD, "product.template", "read", [product_ids], {"fields": ["id", "name", "list_price", "categ_id", "image_128"]})
-        print(f"📦 ERP ထံမှ ပစ္စည်း {len(products)} ခု ဖတ်ယူပြီးပါပြီ။")
+        total_products = len(product_ids)
+        print(f"📦 ERP ထံတွင် ရောင်းချမည့် ပစ္စည်းစုစုပေါင်း {total_products} ခု တွေ့ရှိရပါသည်။")
+
+        # ⚡ CHUNK CONFIGURATION: Network ကျမသွားစေရန် ပစ္စည်း ၄၀ စီစီပဲ အပိုင်းလိုက် ခွဲဆွဲမည့်စနစ်
+        CHUNK_SIZE = 40
+        products = []
+        
+        print(f"🔄 ဒေတာဝန်ပေါ့စေရန် ပစ္စည်းများကို အုပ်စုငယ် ({CHUNK_SIZE} ခုစီ) ခွဲ၍ စနစ်တကျ ဒေါင်းလုဒ်ဆွဲနေပါသည်...")
+        for i in range(0, total_products, CHUNK_SIZE):
+            chunk_ids = product_ids[i : i + CHUNK_SIZE]
+            try:
+                # အပိုင်းလိုက်ဖတ်ခြင်းဖြင့် IncompleteRead Error အမြစ်ပြတ်သွားပါမည်
+                chunk_products = models.execute_kw(
+                    DB, uid, PASSWORD, "product.template", "read", 
+                    [chunk_ids], {"fields": ["id", "name", "list_price", "categ_id", "image_128"]}
+                )
+                products.extend(chunk_products)
+                print(f"🔹 ဒေါင်းလုဒ်ဆွဲပြီးစီးမှု: {len(products)}/{total_products} ခု...")
+                time.sleep(0.5) # Server မောမသွားစေရန် ခဏနားပေးခြင်း
+            except Exception as read_err:
+                print(f"⚠️ ပစ္စည်းအုပ်စုအချို့ ဖတ်ယူရန် အခက်အခဲရှိသဖြင့် ကျော်သွားပါသည်: {read_err}")
 
         raw_data_rows = []
         print("📸 ဓာတ်ပုံများကို Google Drive ထဲသို့ Direct API စနစ်ဖြင့် အကွက်ချ သိမ်းဆည်းနေပါသည်...")
@@ -75,10 +94,8 @@ def sync():
             categ_data = p.get("categ_id", False)
             p_category = [item.strip() for item in categ_data[1].split("/")][-1] if categ_data else "Uncategorized"
             
-            # Google Sheet Layout: [ID, Name, Myanmar_Name, Price, Image, Category]
             raw_data_rows.append([p_id, p_name_en, "", p_price, "", p_category])
             
-            # ⚡ FIXED LOGIC: Apps Script ခေါ်တာကို လုံးဝဖြုတ်ပစ်ပြီး Google Drive API ဆီသာ တိုက်ရိုက် မောင်းသွင်းခိုင်းခြင်း
             if p_image:
                 status = upload_to_drive_direct(p_id, p_image)
                 print(f"[{idx+1}/{len(products)}] 📤 Drive Upload for ID {p_id}: Status {status}")
@@ -89,6 +106,7 @@ def sync():
         
         response = requests.post(WEB_APP_URL, data=json.dumps(payload), headers=headers)
         print(f"✨ [SUCCESS] Final Sheet Sync Status: {response.text}")
+        print("💡 ယခု သင်၏ Google Drive Folder နှင့် Catalog အား စစ်ဆေးနိုင်ပါပြီဗျာ!")
         
     except Exception as e:
         print(f"❌ Error: {e}")
