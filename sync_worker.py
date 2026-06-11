@@ -17,7 +17,7 @@ PASSWORD = "f48f4bafa7c2b69d4156fc44e424182070c8287d"
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzwLwVZA4TEXEjvtWMvH_aTGPpo1DBoSqicsQF1utj2kZCNMfMUpLMQJ23zO_-yVCH3/exec"
 
 def sync():
-    print("🔄 Odoo ERP ထံမှ ကုန်ပစ္စည်းအချက်အလက်များ စတင်ဆွဲယူနေပါသည်...")
+    print("🔄 Odoo ERP ထံမှ Live Data များနှင့် ကတ္တဂိုရီများကို ဆွဲယူနေပါသည်...")
     try:
         common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
         uid = common.authenticate(DB, USERNAME, PASSWORD, {})
@@ -33,11 +33,10 @@ def sync():
             p_name_en = p.get("name", "")
             p_price = p.get("list_price", 0)
             
-            # Category နာမည် သန့်စင်ခြင်း
             categ_data = p.get("categ_id", False)
             p_category = [item.strip() for item in categ_data[1].split("/")][-1] if categ_data else "Uncategorized"
             
-            # Google Sheet Layout အတိုင်း (Image ကို Blank "" ထားသည်)
+            # Layout: [ID, Name, Myanmar_Name, Price, Image, Category]
             raw_data_rows.append([p_id, p_name_en, "", p_price, "", p_category])
 
         print("📤 Google Sheet သို့ ဒေတာများ လွှဲပြောင်းတင်ပို့နေပါသည်...")
