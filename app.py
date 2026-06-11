@@ -5,7 +5,6 @@ from deep_translator import GoogleTranslator
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling (လုပ်ငန်းသုံး သပ်ရပ်လှပသော Layout ဒီဇိုင်း)
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -23,10 +22,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# သင့် Google Drive Folder ID
-DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
-
-# --- Google Sheet မှ Data ဖတ်ယူမည့် Function ---
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
@@ -44,6 +39,7 @@ if df is not None:
     df['Name'] = df['Name'].fillna("").astype(str)
     df['Myanmar_Name'] = df['Myanmar_Name'].fillna("").astype(str)
     df['Price'] = df['Price'].fillna(0).astype(float)
+    df['Image'] = df['Image'].fillna("").astype(str)  # ⚡ Sheet ထဲမှ Image အား တိုက်ရိုက်ဖတ်ခြင်း
     df['Category'] = df['Category'].fillna("Uncategorized").astype(str)
 
     # 📂 Category Filter
@@ -73,13 +69,11 @@ if df is not None:
     if total_items > 0:
         product_list = []
         for index, row in df.iterrows():
-            p_id = str(row['ID'])
             display_name = row['Myanmar_Name'] if row['Myanmar_Name'] else row['Name']
-            
             product_list.append({
-                "id": p_id,
                 "name": display_name, 
-                "price": row['Price']
+                "price": row['Price'],
+                "image": row['Image']  # ⚡ Image ဒေတာ ထည့်သွင်းခြင်း
             })
 
         # --- 🎨 Grid ပြသခြင်းစနစ် (တစ်တန်းလျှင် ၇ ခု) ---
@@ -93,22 +87,21 @@ if df is not None:
             for idx, prod in enumerate(row_items):
                 with cols[idx]:
                     with st.container():
-                        p_id = prod["id"]
-                        
-                        # ⚡ FIXED GOOGLE DRIVE LINK: Google Drive Shared Link သို့မဟုတ် ID စနစ်အစား
-                        # Worker က သင့် Drive Folder ထဲကို တင်ပေးလိုက်တဲ့ ပုံဖိုင်တွေကို ဖတ်ပြမည့် Direct CDN URL အမှန် ဖြစ်ပါတယ်
-                        drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}"
-                        
-                        # 🖼️ Streamlit ရဲ့ ပင်ကိုယ် image tag ကို သုံးခြင်းက HTML ဝင်ရှုပ်တာထက် ပိုမိုတည်ငြိမ်ပြတ်သားစွာ ပေါ်စေပါတယ်
-                        st.markdown('<div style="height:110px; display:flex; align-items:center; justify-content:center;">', unsafe_allow_html=True)
-                        
-                        # ID အလိုက် သက်ဆိုင်ရာ Drive ပုံကို တိုက်ရိုက် ဆွဲတင်ပြသခြင်း
-                        # (အကယ်၍ Drive ထဲတွင် ပုံလုံးဝမရှိခဲ့ပါက သပ်ရပ်သော No Image placeholder ပုံပြပါမည်)
-                        st.image(
-                            "https://placehold.co/110x110/f1f5f9/94a3b8?text=No+Image", 
-                            use_container_width=True
-                        )
-                        st.markdown('</div>', unsafe_allow_html=True)
+                        # ⚡ FIXED IMAGE LOGIC: Google Sheet ထဲမှ ရလာသော Base64 Image ကို အမှန်ကန်ဆုံး ပြသခြင်း
+                        if prod['image'] and str(prod['image']).strip() != "":
+                            st.markdown(f"""
+                                <div style="text-align:center; height:110px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
+                                    <img src="data:image/png;base64,{prod['image']}" 
+                                         style="max-height:110px; max-width:100%; object-fit:contain; border-radius:6px;">
+                                </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown("""
+                                <div style="text-align:center; height:110px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
+                                    <img src="https://placehold.co/110x110/f1f5f9/94a3b8?text=No+Image" 
+                                         style="max-height:110px; max-width:100%; object-fit:contain; border-radius:6px;">
+                                </div>
+                            """, unsafe_allow_html=True)
 
                         # ကုန်ပစ္စည်းအမည်
                         st.markdown(f'<div style="font-weight:600; font-size:14px; color:#1e293b; min-height:42px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center; margin-top:5px;">{prod["name"]}</div>', unsafe_allow_html=True)
