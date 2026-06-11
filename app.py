@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from deep_translator import GoogleTranslator
 
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
@@ -22,24 +21,24 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 180px;
+        min-height: 160px;
     }
     .product-image-box {
         text-align: center; 
-        height: 60px; 
+        height: 50px; 
         display: flex; 
         align-items: center; 
         justify-content: center; 
         background-color: #f1f5f9; 
         border-radius: 6px;
         color: #94a3b8;
-        font-size: 20px;
+        font-size: 18px;
     }
     .product-info-box {
         display: flex;
         flex-direction: column;
         gap: 2px;
-        margin-top: 6px;
+        margin-top: 4px;
         text-align: center;
     }
     .product-title {
@@ -55,7 +54,6 @@ st.markdown("""
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
-    # Header Row မပါဘဲ သန့်သန့်ဖတ်ရန်အတွက် header=0 ဟု သတ်မှတ်သည်
     url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv"
     try:
         df = pd.read_csv(url)
@@ -66,26 +64,28 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # ⚡ FIXED COLUMN MAPPING: မင်းပြပေးလိုက်တဲ့ တကယ့် Google Sheet ကော်လံအတိုင်း ကွက်တိ နာမည်ပေးခြင်း
-    # Column A=ID, B=Name, C=Myanmar_Name, D=Price, E=Image, F=Category
-    df.columns = ['ID', 'Name', 'Myanmar_Name', 'Price', 'Image', 'Category'] + list(df.columns[6:])
+    # ⚡ BULLETPROOF COLUMN FIX: ကော်လံအရေအတွက် မည်မျှပဲရှိရှိ ပထမဆုံး ၆ ကော်လံကို အတိအကျ နာမည်ခွဲပေးခြင်း
+    base_columns = ['ID', 'Name', 'Myanmar_Name', 'Price', 'Image', 'Category']
+    df.columns = base_columns + list(df.columns[len(base_columns):])
     
     parsed_products = []
     
     for index, row in df.iterrows():
-        p_id = str(row['ID']).strip()
-        p_name = str(row['Name']).strip()
+        p_id = str(row['ID']).strip() if pd.notna(row['ID']) else ""
+        p_name = str(row['Name']).strip() if pd.notna(row['Name']) else ""
         p_myanmar = str(row['Myanmar_Name']).strip() if pd.notna(row['Myanmar_Name']) else ""
         
-        # စျေးနှုန်းကို ကိန်းပြည့်အဖြစ် ပြောင်းလဲခြင်း
+        # စျေးနှုန်းကော်လံ (D) ကို တိုက်ရိုက်ဂဏန်းအဖြစ် ယူခြင်း
         try:
             p_price = float(row['Price'])
         except:
             p_price = 0.0
             
         p_category = str(row['Category']).strip() if pd.notna(row['Category']) else "Uncategorized"
-        
-        # အကယ်၍ Myanmar_Name ကော်လံထဲမှာ စာသားရှိနေရင် ၎င်းကိုပြပြီး၊ မရှိရင် ပင်မ Name ကို သုံးမည်
+        if p_category.lower() == "nan" or p_category == "":
+            p_category = "Uncategorized"
+            
+        # Myanmar_Name ကော်လံ လောလောဆယ် ကွက်လပ်ဖြစ်နေပါက Name ကို တိုက်ရိုက်သုံးမည်
         display_title = p_myanmar if (p_myanmar and p_myanmar.lower() != "nan") else p_name
         
         parsed_products.append({
@@ -97,7 +97,7 @@ if df is not None:
         
     pdf = pd.DataFrame(parsed_products)
 
-    # 📂 Category Filter UI (အုပ်စုအလိုက် ကွက်တိခွဲပြနိုင်ပါပြီ)
+    # 📂 Category Filter UI
     categories = ["All Categories"] + sorted(pdf['category'].unique().tolist())
     selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
     
@@ -118,4 +118,33 @@ if df is not None:
         
         cols_per_row = 7
         for i in range(0, len(pdf), cols_per_row):
-            row_items = pdf.iloc
+            row_items = pdf.iloc[i : i + cols_per_row]
+            cols = st.columns(cols_per_row)
+
+            for idx, (_, prod) in enumerate(row_items.iterrows()):
+                with cols[idx]:
+                    with st.container():
+                        # 🖼️ သပ်ရပ်လှပသော Box Layout
+                        st.markdown(f"""
+                            <div class="product-image-box">
+                                📦
+                            </div>
+                        """, unsafe_allow_html=True)
+
+                        # စျေးနှုန်းအား ကော်မာဖြတ်ပြခြင်း
+                        try:
+                            price_str = f"{int(prod['price']):,}"
+                        except:
+                            price_str = str(prod['price'])
+
+                        # အမည်နှင့် စျေးနှုန်း ကပ်လျက်ပြသခြင်း
+                        st.markdown(f"""
+                            <div class="product-info-box">
+                                <div class="product-title">{prod['name']}</div>
+                                <div class="product-price">{price_str} <span class="product-unit">ks</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+    else:
+        st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
+else:
+    st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
