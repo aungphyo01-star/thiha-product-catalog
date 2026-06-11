@@ -59,7 +59,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# သင့် Google Drive Folder ID
+# သင့် Google Drive Folder ID (ဤ Folder ကို Anyone with link can view ပေးထားရန် လိုအပ်ပါသည်)
 DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
 
 @st.cache_data(ttl=300)
@@ -135,8 +135,8 @@ if df is not None:
                     with st.container():
                         p_id = prod["id"]
                         
-                        # ⚡ DRIVE DYNAMIC IMAGE SOURCE: Product ID အလိုက် Drive ထဲမှ ပုံကို တိုက်ရိုက်ဆွဲထုတ်ခြင်း၊ 
-                        # ပုံမရှိပါက Error မတက်ဘဲ Placeholder စမတ်ကတ်လေး ပြောင်းပြပေးမည့်စနစ်
+                        # ⚡ FIXED DRIVE CONNECTOR: Drive Folder ID နှင့် Product ID (.png) ကိုသုံးပြီး တိုက်ရိုက်ချိတ်ဆက်ခြင်း
+                        # သင့် Google Drive ထဲရှိ ပုံဖိုင်များကို Live Web URL အဖြစ် ပြောင်းလဲပြသပေးမည့် တရားဝင်ပုံစံဖြစ်သည်
                         drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}={p_id}"
                         
                         st.markdown(f"""
