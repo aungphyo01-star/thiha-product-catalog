@@ -20,18 +20,13 @@ st.markdown("""
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         display: flex;
         flex-direction: column;
-        justify-content: flex-start; /* ⚡ အပေါ်ကပ်စနစ် သုံးထားပါသည် */
-        min-height: 180px; /* ⚡ ဓာတ်ပုံပါဝင်သော ကတ်ပြားအမြင့်ကို ပိုမိုကျစ်လျစ်အောင် ညှိထားပါသည် */
-        margin-bottom: 100px !important; /* ⚡ ဤလိုင်းကို အသစ်ထည့်ပေးပါ - တစ်လိုင်းနဲ့တစ်လိုင်းကြားကို ဟပေးမည့် ဆက်တင် ဖြစ်ပါသည် */
-        /* ⚡ ဤကုဒ် block အသစ်ကို လက်ရှိ div[data-testid="stContainer"] ရဲ့ အောက်နားမှာ ကူးထည့်ပေးလိုက်ပါ */
-    div[data-testid="stColumn"] {
-    margin-bottom: 25px !important; /* ⚡ 25px ဆိုလျှင် တစ်လိုင်းနဲ့တစ်လိုင်း ကြည့်ကောင်းရုံ ဟသွားပါလိမ့်မည် */
-}
+        justify-content: flex-start;
+        min-height: 180px;
     }
     .product-info-box {
         display: flex;
         flex-direction: column;
-        gap: 0px; /* ⚡ စာသားနှစ်ခုကြား ကွက်လပ်ကို သုညအထိ ချုံ့ထားပါသည် */
+        gap: 0px;
         margin-top: 4px;
         text-align: center;
     }
@@ -40,19 +35,19 @@ st.markdown("""
         font-size: 13px; 
         color: #1e293b; 
         line-height: 1.2; 
-        margin-bottom: 2px !important; /* ⚡ အောက်ခြေကွက်လပ်ကို ဖယ်ရှားထားပါသည် */
+        margin-bottom: 2px !important;
         display: -webkit-box; 
         -webkit-line-clamp: 2; 
         -webkit-box-orient: vertical; 
         overflow: hidden; 
-        min-height: 0px;
+        min-height: 0px; /* ⚡ စာတစ်လိုင်းထဲရှိလျှင် အောက်ခြေအလိုအလျောက် ဟနေခြင်းအား 0px ဖြင့် ပိတ်ဆို့ထားပါသည် */
     }
     .product-price { 
         font-size: 18px; 
         font-weight: 800; 
         color: #002d72; 
-        line-height: 1; /* ⚡ စျေးနှုန်းစာသား အမြင့်ကို အကျစ်လျစ်ဆုံး လုပ်ထားပါသည် */
-        margin-top: 0px !important;
+        line-height: 1; 
+        margin-top: -6px !important; /* ⚡ ဈေးနှုန်းစာသားအား အမည်နှင့် ကပ်သွားစေရန် အပေါ်သို့ ဆွဲတင်ထားပါသည် */
     }
     .product-unit { font-size: 11px; font-weight: 400; color: #64748b; }
     </style>
@@ -156,13 +151,15 @@ if df is not None:
                             except:
                                 price_str = str(prod['price'])
 
-                            # ⚡ ကပ်လျက်ဖြစ်သွားစေရန် ထိန်းချုပ်ထားသော CSS တည်ဆောက်ပုံ
                             st.markdown(f"""
                                 <div class="product-info-box">
                                     <div class="product-title">{prod['name']}</div>
                                     <div class="product-price">{price_str} <span class="product-unit">ks</span></div>
                                 </div>
                             """, unsafe_allow_html=True)
+                
+                # ⚡ FIXED LOOP ALIGNMENT: Row တစ်လိုင်း (ပစ္စည်း ၇ ခု) ပြီးတိုင်း အောက်ခြေသို့ 35px စာ သန့်သန့်ရပ်ရပ် တွန်းချပေးမည့် နေရာအမှန် ဖြစ်ပါသည်
+                st.markdown('<div style="margin-bottom: 35px;"></div>', unsafe_allow_html=True)
         else:
             st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
     else:
