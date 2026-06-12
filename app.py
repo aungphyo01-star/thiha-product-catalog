@@ -139,5 +139,7 @@ if df is not None:
                             """, unsafe_allow_html=True)
         else:
             st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
+    else:
+        st.info("ပြသရန် ဒေတာ မရှိပါ။")
 else:
     st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
