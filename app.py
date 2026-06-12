@@ -89,23 +89,4 @@ if df is not None:
         if selected_cat == "⭐️ Selected Products":
             pdf = pdf[pdf['raw_name'].isin(ALLOWED_PRODUCTS) | pdf['raw_mm'].isin(ALLOWED_PRODUCTS) | pdf['name'].isin(ALLOWED_PRODUCTS)]
         elif selected_cat != "All Categories":
-            pdf = pdf[pdf['category'] == selected_cat]
-
-        if search_q:
-            pdf = pdf[pdf['name'].str.lower().str.contains(search_q.lower(), na=False)]
-
-        total_items = len(pdf)
-        
-        if total_items > 0:
-            st.markdown(f'<div class="section-banner"><h2>📦 Product Catalog - {selected_cat} ({total_items} ခု)</h2></div>', unsafe_allow_html=True)
-            
-            # ⚡ PAGINATION CONFIG
-            ITEMS_PER_PAGE = 35
-            total_pages = math.ceil(total_items / ITEMS_PER_PAGE)
-            
-            if "current_page" not in st.session_state:
-                st.session_state.current_page = 1
-                
-            if "prev_cat" not in st.session_state or st.session_state.prev_cat != selected_cat or "prev_q" not in st.session_state or st.session_state.prev_q != search_q:
-                st.session_state.current_page = 1
-                st.session_state.prev_
+            pdf = pdf[pdf['category'] ==
