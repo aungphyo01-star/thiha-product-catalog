@@ -17,7 +17,7 @@ PASSWORD = "f48f4bafa7c2b69d4156fc44e424182070c8287d"
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzwLwVZA4TEXEjvtWMvH_aTGPpo1DBoSqicsQF1utj2kZCNMfMUpLMQJ23zO_-yVCH3/exec"
 
 def sync():
-    print("🔄 Odoo ERP မှ Live ဒေတာများနှင့် ပုံများကို Maximum Safety စနစ်ဖြင့် စတင်ဆွဲယူနေပါသည်...")
+    print("🔄 Odoo ERP မှ Live ဒေတာများကို စစ်ထုတ်စနစ်ဖြင့် စတင်ဆွဲယူနေပါသည်...")
     try:
         common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
         uid = common.authenticate(DB, USERNAME, PASSWORD, {})
@@ -27,8 +27,7 @@ def sync():
         total_products = len(product_ids)
         print(f"📦 ERP တွင် ရောင်းချမည့် ပစ္စည်းစုစုပေါင်း {total_products} ခု တွေ့ရှိရပါသည်။")
 
-        # ⚡ CRITICAL BULLETPROOF CHUNK: Google Sheet ဟန်းပြီး ဒေတာပြတ်မကျစေရန် ၈ ခုစီသာ ခွဲပို့မည်
-        CHUNK_SIZE = 8
+        CHUNK_SIZE = 12
         headers = {"Content-Type": "application/json"}
         
         for i in range(0, total_products, CHUNK_SIZE):
@@ -44,7 +43,22 @@ def sync():
                 p_name_en = p.get("display_name", "")
                 p_price = p.get("list_price", 0)
                 
-                # Odoo Security အား ကျော်ဖြတ်ရန် Image Base64 အား တိုက်ရိုက်ဆွဲယူခြင်း
+                # ⚡ STRATEGIC FILTERING RULES (UI တွင် မပြလိုသော ပစ္စည်းများအား စစ်ထုတ်ခြင်း)
+                name_lower = p_name_en.lower()
+                
+                # ၁။ ဈေးနှုန်း သုည သို့မဟုတ် Negative ဖြစ်နေလျှင် ဖြတ်ချမည်
+                if p_price <= 0:
+                    continue
+                # ၂။ Delivery Fee ပါဝင်လျှင် ဖြတ်ချမည်
+                if "delivery" in name_lower:
+                    continue
+                # ၃။ Viber ပါဝင်လျှင် ဖြတ်ချမည်
+                if "viber" in name_lower:
+                    continue
+                # ၄။ Nosell သို့မဟုတ် No sell ပါဝင်လျှင် ဖြတ်ချမည်
+                if "nosell" in name_lower or "no sell" in name_lower:
+                    continue
+                
                 p_image_raw = p.get("image_128", "")
                 p_image = str(p_image_raw).strip() if p_image_raw else ""
                 
@@ -53,16 +67,17 @@ def sync():
                 
                 raw_data_rows.append([p_id, p_name_en, "", p_price, p_image, p_category])
             
-            is_first_chunk = True if i == 0 else False
-            payload = {"is_first": is_first_chunk, "data": raw_data_rows}
+            # ဒေတာအုပ်စု ဗလာကျင်းမနေမှသာ Google Sheet ဆီ ပို့မည်
+            if raw_data_rows:
+                is_first_chunk = True if i == 0 else False
+                payload = {"is_first": is_first_chunk, "data": raw_data_rows}
+                
+                response = requests.post(WEB_APP_URL, data=json.dumps(payload), headers=headers)
+                print(f"🔹 Sync Progress: {min(i + CHUNK_SIZE, total_products)}/{total_products} ... Status: {response.text}")
             
-            response = requests.post(WEB_APP_URL, data=json.dumps(payload), headers=headers)
-            print(f"🔹 Sync Progress: {min(i + CHUNK_SIZE, total_products)}/{total_products} ... Status: {response.text}")
-            
-            # ⚡ ၃ စက္ကန့် အချိန်ခြားပေးခြင်းဖြင့် Google Sheets ဘက်မှ ဒေတာများကို ဟန်းမသွားဘဲ စိတ်ချရစွာ သိမ်းဆည်းနိုင်မည်
-            time.sleep(3.0)
+            time.sleep(2.5)
 
-        print(f"✨ [SUCCESS] ပစ္စည်း {total_products} ခုလုံး ဒေတာနှင့် ပုံများ Google Sheet ထဲသို့ ၁၀၀% အပြည့်အဝ ဝင်ရောက်သွားပါပြီ!")
+        print("✨ [SUCCESS] သန့်စင်ပြီးသား Product စာရင်းများကို Google Sheet ထဲသို့ အပြည့်အဝ သွင်းပြီးပါပြီ!")
     except Exception as e:
         print(f"❌ Error: {e}")
 
