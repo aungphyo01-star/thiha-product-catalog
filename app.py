@@ -21,7 +21,19 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 190px;
+        min-height: 150px; /* ⚡ ဓာတ်ပုံမပါသဖြင့် ကတ်ပြားအမြင့်ကို ပိုမိုကျစ်လျစ်အောင် ညှိထားပါသည် */
+    }
+    .compact-image-placeholder {
+        text-align: center;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f1f5f9;
+        border-radius: 6px;
+        color: #94a3b8;
+        font-size: 13px;
+        font-weight: 500;
     }
     .product-info-box {
         display: flex;
@@ -111,17 +123,11 @@ if df is not None:
                 for idx, (_, prod) in enumerate(row_items.iterrows()):
                     with cols[idx]:
                         with st.container():
-                            p_id = prod["id"]
                             
-                            # ⚡ HIGH-SPEED ODOO IMAGE CONNECT: 
-                            # Page Loading လုံးဝမကြာစေရန် HTML Browser native Render ကိုသုံး၍ Odoo Server ဆီမှ Live View ပုံကို လှမ်းဆွဲပြသခြင်း
-                            odoo_img_url = f"https://odoo.linklusion.co.jp/web/image/product.template/{p_id}/image_128"
-                            
+                            # ⚡ ဓာတ်ပုံကိစ္စအား ခေတ္တဆိုင်းငံ့ထားသဖြင့် သပ်ရပ်လှပသော Placeholder ဖြင့်သာ ယာယီအစားထိုးထားပါသည်
                             st.markdown(f"""
-                                <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                    <img src="{odoo_img_url}" 
-                                         style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;"
-                                         onerror="this.onerror=null; this.src='https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product';">
+                                <div class="compact-image-placeholder">
+                                    📦 Product
                                 </div>
                             """, unsafe_allow_html=True)
 
