@@ -4,7 +4,7 @@ import pandas as pd
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling: ကတ်များ ကျစ်လျစ်သပ်ရပ်ပြီး ပစ္စည်းအမည်နှင့် စျေးနှုန်း ကပ်နေစေရန် ညှိခြင်း
+# UI Global Styling
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -21,19 +21,7 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 150px; /* ⚡ ဓာတ်ပုံမပါသဖြင့် ကတ်ပြားအမြင့်ကို ပိုမိုကျစ်လျစ်အောင် ညှိထားပါသည် */
-    }
-    .compact-image-placeholder {
-        text-align: center;
-        height: 45px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #f1f5f9;
-        border-radius: 6px;
-        color: #94a3b8;
-        font-size: 13px;
-        font-weight: 500;
+        min-height: 190px;
     }
     .product-info-box {
         display: flex;
@@ -65,7 +53,6 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # Index စနစ်ဖြင့် Column Data များကို တိုက်ရိုက်ကောက်ယူခြင်း (Robust Matching)
     parsed_products = []
     
     for index, row in df.iterrows():
@@ -79,10 +66,9 @@ if df is not None:
             except:
                 p_price = 0.0
                 
+            p_image = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
             p_category = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
-            if p_category.lower() == "nan" or p_category == "":
-                p_category = "Uncategorized"
-                
+            
             display_title = p_myanmar if (p_myanmar and p_myanmar.lower() != "nan" and p_myanmar != "") else p_name
             
             if display_title.lower() != "nan" and p_id != "":
@@ -90,6 +76,7 @@ if df is not None:
                     "id": p_id,
                     "name": display_title,
                     "price": p_price,
+                    "image": p_image,
                     "category": p_category
                 })
         except:
@@ -98,7 +85,6 @@ if df is not None:
     if len(parsed_products) > 0:
         pdf = pd.DataFrame(parsed_products)
 
-        # Filter & Search UI
         categories = ["All Categories"] + sorted(pdf['category'].unique().tolist())
         selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
         search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
@@ -124,12 +110,21 @@ if df is not None:
                     with cols[idx]:
                         with st.container():
                             
-                            # ⚡ ဓာတ်ပုံကိစ္စအား ခေတ္တဆိုင်းငံ့ထားသဖြင့် သပ်ရပ်လှပသော Placeholder ဖြင့်သာ ယာယီအစားထိုးထားပါသည်
-                            st.markdown(f"""
-                                <div class="compact-image-placeholder">
-                                    📦 Product
-                                </div>
-                            """, unsafe_allow_html=True)
+                            # ⚡ HIGH-SPEED ODOO BASE64 DECODER: Sheet ထဲက Odoo ပုံစာသားကို နေရာတင် ချက်ချင်းပုံဖော်သဖြင့် Loading လုံးဝမကြာပါ
+                            if prod['image'] and prod['image'].lower() != "nan" and prod['image'] != "":
+                                st.markdown(f"""
+                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                                        <img src="data:image/png;base64,{prod['image']}" 
+                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            else:
+                                st.markdown("""
+                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                                        <img src="https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product" 
+                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
+                                    </div>
+                                """, unsafe_allow_html=True)
 
                             try:
                                 price_str = f"{int(prod['price']):,}"
@@ -144,7 +139,5 @@ if df is not None:
                             """, unsafe_allow_html=True)
         else:
             st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
-    else:
-        st.info("ပြသရန် ဒေတာ မရှိပါ။")
 else:
     st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
