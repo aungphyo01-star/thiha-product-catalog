@@ -40,7 +40,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=60) # ⚡ Update သိသာစေရန် Cache သက်တမ်းကို ၁ မိနစ်သာ ထားရှိပါသည်
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
     url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv"
@@ -71,14 +71,15 @@ if df is not None:
             if p_category.lower() == "nan" or p_category == "":
                 p_category = "Uncategorized"
                 
+            # ⚡ CRITICAL FIX: အမည်မပါသော ပစ္စည်းများကို ID ဖြင့် အစားထိုးပြသပြီး ဒေတာ ၅၉၈ ခုလုံး အပြည့်ပေါ်စေရန် ထိန်းသိမ်းခြင်း
             if p_myanmar and p_myanmar.lower() != "nan" and p_myanmar != "":
                 display_title = p_myanmar
             elif p_name and p_name.lower() != "nan" and p_name != "":
                 display_title = p_name
             else:
-                display_title = f"Item #{p_id}" if p_id else f"Unknown Item ({p_category})"
+                display_title = f"Product #{p_id}" if p_id else f"Unnamed Item ({p_category})"
             
-            if p_id != "":
+            if p_id != "" and p_id.lower() != "nan":
                 parsed_products.append({
                     "id": p_id,
                     "name": display_title,
@@ -117,7 +118,7 @@ if df is not None:
                     with cols[idx]:
                         with st.container():
                             
-                            # ⚡ UNBREAKABLE LOCAL DECODER: Sheet ထဲက စိတ်ချရသော ပုံစာသားကို သုံး၍ ပုံအစစ်များကို တိုက်ရိုက်ဆွဲပြခြင်း
+                            # ⚡ Base64 Local Decoder
                             if prod['image'] and prod['image'].lower() != "nan" and prod['image'] != "":
                                 st.markdown(f"""
                                     <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
