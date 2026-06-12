@@ -13,32 +13,17 @@ st.markdown("""
         border-left: 8px solid #002d72; margin: 25px 0; color: black; font-weight: bold;
     }
     div[data-testid="stContainer"] {
-        background-color: white;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 8px;
-        padding: 8px !important;
+        background-color: white; border: 1px solid #e2e8f0 !important;
+        border-radius: 8px; padding: 8px !important;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        min-height: 180px;
+        display: flex; flex-direction: column; justify-content: flex-start; min-height: 180px;
     }
-    .product-info-box {
-        display: flex;
-        flex-direction: column;
-        gap: 0px;
-        margin-top: 4px;
-        text-align: center;
-    }
+    .product-info-box { display: flex; flex-direction: column; gap: 0px; margin-top: 4px; text-align: center; }
     .product-title {
-        font-weight: 600; font-size: 13px; color: #1e293b; line-height: 1.2; 
-        margin-bottom: 2px !important;
-        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
-        overflow: hidden; min-height: 0px;
+        font-weight: 600; font-size: 13px; color: #1e293b; line-height: 1.2; margin-bottom: 2px !important;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 0px;
     }
-    .product-price { 
-        font-size: 18px; font-weight: 800; color: #002d72; line-height: 1; margin-top: 2px !important;
-    }
+    .product-price { font-size: 18px; font-weight: 800; color: #002d72; line-height: 1; margin-top: 2px !important; }
     .product-unit { font-size: 11px; font-weight: 400; color: #64748b; }
     </style>
 """, unsafe_allow_html=True)
@@ -48,14 +33,13 @@ def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
     url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv"
     try:
-        df = pd.read_csv(url)
-        return df
+        return pd.read_csv(url)
     except:
         return None
 
 df = load_catalog_data()
 
-# ⚡ Filter ထဲတွင် "⭐️ Selected Products" ရွေးလျှင် သီးသန့်ပြသမည့် ပစ္စည်းစာရင်း
+# ⚡ Selected Products List
 ALLOWED_PRODUCTS = [
     "Sunday 3in1 Coffee Mix", "Sunday 3in1 Tea Mix", "Sunday Nhat Phyaw Coffee",
     "Raw Tamarind", "Red Butter Bean", "Red Dragon Cigarettes (L)",
@@ -81,9 +65,4 @@ if df is not None:
             if p_category.lower() == "nan" or p_category == "":
                 p_category = "Uncategorized"
                 
-            if p_myanmar and p_myanmar.lower() != "nan" and p_myanmar != "":
-                display_title = p_myanmar
-            elif p_name and p_name.lower() != "nan" and p_name != "":
-                display_title = p_name
-            else:
-                display_title = f
+            # ⚡ SHORT-HAND TITLES: စာကြောင်းပြ
