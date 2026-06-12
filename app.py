@@ -4,7 +4,7 @@ import pandas as pd
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling: ပစ္စည်းအမည်နှင့် စျေးနှုန်း အကွာအဝေး အနေတော်ဖြစ်စေရန် margin-top အား 2px သို့ ညှိထားပါသည်
+# UI Global Styling
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -47,7 +47,7 @@ st.markdown("""
         font-weight: 800; 
         color: #002d72; 
         line-height: 1; 
-        margin-top: 2px !important; /* ⚡ -6px မှ 2px သို့ ပြောင်းလဲထားသဖြင့် စိလွန်းခြင်းမှ သက်သာပြီး အနေတော် ဖြစ်သွားပါမည် */
+        margin-top: 2px !important;
     }
     .product-unit { font-size: 11px; font-weight: 400; color: #64748b; }
     </style>
@@ -65,8 +65,7 @@ def load_catalog_data():
 
 df = load_catalog_data()
 
-# ⚡ WHITE-LIST SELECTION: ကတ်တလောက်ပေါ်တွင် ပြသရန် ခွင့်ပြုထားသော ပစ္စည်းအမည်များစာရင်း
-# 💡 နောက်ပိုင်း ပစ္စည်းအသစ် ထပ်ပြချင်ရင် ဖြစ်စေ၊ ပြန်ဖြုတ်ချင်ရင်ဖြစ်စေ ဤစာရင်းထဲတွင် စာလုံးပေါင်းကွက်တိအတိုင်း လာပြင်ရုံရုံပါပဲဗျာ
+# ⚡ Filter သီးသန့်အဖြစ် သတ်မှတ်ပေးမည့် ပစ္စည်းအမည်များစာရင်း
 ALLOWED_PRODUCTS = [
     "Sunday 3in1 Coffee Mix",
     "Sunday 3in1 Tea Mix",
@@ -82,6 +81,7 @@ ALLOWED_PRODUCTS = [
 if df is not None:
     parsed_products = []
     
+    # ၁။ Google Sheet ထဲက ၅၉၈ ခုလုံးကို စာရင်းထဲ အရင်အပြည့်အဝ ထည့်သွင်းပါသည်
     for index, row in df.iterrows():
         try:
             p_id = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
@@ -105,30 +105,40 @@ if df is not None:
             else:
                 display_title = f"Product #{p_id}" if p_id else f"Unnamed Item ({p_category})"
             
-            # ⚡ STRATEGIC FILTER: ကိုယ်ရွေးချယ်ထားတဲ့ ပစ္စည်းအမည်များ (ALLOWED_PRODUCTS) နှင့် ကိုက်ညီမှသာ စာရင်းထဲ ထည့်မည်
-            # (Odoo display_name သို့မဟုတ် မြန်မာအမည် တစ်ခုခုနှင့် ကိုက်ညီလျှင် ပြသပေးပါမည်)
             if p_id != "" and p_id.lower() != "nan":
-                if (p_name in ALLOWED_PRODUCTS) or (p_myanmar in ALLOWED_PRODUCTS) or (display_title in ALLOWED_PRODUCTS):
-                    parsed_products.append({
-                        "id": p_id,
-                        "name": display_title,
-                        "price": p_price,
-                        "image": p_image,
-                        "category": p_category
-                    })
+                parsed_products.append({
+                    "id": p_id,
+                    "name": display_title,
+                    "raw_name": p_name,
+                    "raw_mm": p_myanmar,
+                    "price": p_price,
+                    "image": p_image,
+                    "category": p_category
+                })
         except:
             pass
         
     if len(parsed_products) > 0:
         pdf = pd.DataFrame(parsed_products)
 
-        categories = ["All Categories"] + sorted(pdf['category'].unique().tolist())
+        # ⚡ STRATEGIC FILTER LIST: Dropdown Menu ထဲတွင် "⭐️ Selected Products" ဆိုသော Filter အား ဒုတိယမြောက်နေရာတွင် အထူးတိုးထည့်ခြင်း
+        categories = ["All Categories", "⭐️ Selected Products"] + sorted(pdf['category'].unique().tolist())
         selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
         search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
 
-        if selected_category != "All Categories":
+        # ⚡ FILTER LOGIC: Dropdown ရွေးချယ်မှုအလိုက် စစ်ထုတ်ခြင်း
+        if selected_category == "⭐️ Selected Products":
+            # ရွေးချယ်ထားသော ပစ္စည်းအမည်များနှင့် ကိုက်ညီမှုရှိမရှိ စစ်ထုတ်ပေးမည့်စနစ်
+            pdf = pdf[
+                pdf['raw_name'].isin(ALLOWED_PRODUCTS) | 
+                pdf['raw_mm'].isin(ALLOWED_PRODUCTS) | 
+                pdf['name'].isin(ALLOWED_PRODUCTS)
+            ]
+        elif selected_category != "All Categories":
+            # ပုံမှန် ကုန်ပစ္စည်းအုပ်စုအလိုက် စစ်ထုတ်ခြင်း
             pdf = pdf[pdf['category'] == selected_category]
 
+        # Search Bar ဖြင့် ထပ်မံ ရှာဖွေနိုင်ခြင်း
         if search_query:
             query = search_query.lower()
             pdf = pdf[pdf['name'].str.lower().str.contains(query, na=False)]
@@ -176,10 +186,4 @@ if df is not None:
                             """, unsafe_allow_html=True)
                 
                 # Row တစ်လိုင်းပြီးတိုင်း အောက်ခြေသို့ 35px စာ ဟပေးမည့် စနစ်
-                st.markdown('<div style="margin-bottom: 35px;"></div>', unsafe_allow_html=True)
-        else:
-            st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
-    else:
-        st.info("ရွေးချယ်ထားသော သတ်မှတ်ချက်များနှင့် ကိုက်ညီသည့် ပြသရန်ကုန်ပစ္စည်း မရှိသေးပါ။")
-else:
-    st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
+                st.markdown('<div style="margin-bottom: 3
