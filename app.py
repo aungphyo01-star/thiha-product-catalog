@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import math
 
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
@@ -63,7 +64,6 @@ if df is not None:
             p_img = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
             p_cat = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
             
-            # ⚡ BULLETPROOF ONE-LINER: စာကြောင်းပြတ်မကျစေရန် logic ကို တစ်လိုင်းတည်းဖြင့် အပြီးသတ် ချုံ့ထားပါသည်
             title = p_mm if (p_mm and p_mm.lower() != "nan") else (p_name if (p_name and p_name.lower() != "nan") else f"Item #{p_id}")
             
             if p_id and p_id.lower() != "nan":
@@ -77,10 +77,15 @@ if df is not None:
     if len(parsed_products) > 0:
         pdf = pd.DataFrame(parsed_products)
 
-        # Dropdown Menu
+        # Dropdown Menu & Search Bar
         cats = ["All Categories", "⭐️ Selected Products"] + sorted(pdf['category'].unique().tolist())
-        selected_cat = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", cats)
-        search_q = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
+        
+        # UI အပြင်အဆင်ကို ပိုကျစ်လျစ်စေရန် ဘေးချင်းယှဉ် Column ပြောင်းလဲခြင်း
+        f_col1, f_col2 = st.columns([2, 2])
+        with f_col1:
+            selected_cat = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ရန်", cats)
+        with f_col2:
+            search_q = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
 
         # Filter Logic
         if selected_cat == "⭐️ Selected Products":
@@ -96,9 +101,47 @@ if df is not None:
         if total_items > 0:
             st.markdown(f'<div class="section-banner"><h2>📦 Product Catalog - {selected_cat} ({total_items} ခု)</h2></div>', unsafe_allow_html=True)
             
+            # ⚡ HIGH-SPEED PAGINATION SYSTEM: Loading လုံးဝမကြာစေရန် တစ်မျက်နှာလျှင် ၃၅ ခုစီသာ ခွဲပြမည့်စနစ်
+            ITEMS_PER_PAGE = 35
+            total_pages = math.ceil(total_items / ITEMS_PER_PAGE)
+            
+            # မျက်နှာပြောင်းရန် ခလုတ်များ တည်ဆောက်ခြင်း
+            p_col1, p_col2, p_col3 = st.columns([1, 4,  1])
+            
+            # Session State ထဲတွင် လက်ရှိစာမျက်နှာမှတ်သားခြင်း
+            if "current_page" not in st.session_state:
+                st.session_state.current_page = 1
+                
+            # Category သို့မဟုတ် Search ပြောင်းသွားလျှင် မျက်နှာပြောင်းလဲမှုကို Page 1 သို့ Reset ချခြင်း
+            if "prev_cat" not in st.session_state or st.session_state.prev_cat != selected_cat or "prev_q" not in st.session_state or st.session_state.prev_q != search_q:
+                st.session_state.current_page = 1
+                st.session_state.prev_cat = selected_cat
+                st.session_state.prev_q = search_q
+
+            # စာမျက်နှာ ကန့်သတ်ချက်ထက် ကျော်လွန်နေပါက တည့်မတ်ပေးခြင်း
+            if st.session_state.current_page > total_pages:
+                st.session_state.current_page = max(1, total_pages)
+
+            with p_col1:
+                if st.button("⬅️ Previous") and st.session_state.current_page > 1:
+                    st.session_state.current_page -= 1
+                    st.rerun()
+            with p_col2:
+                st.markdown(f"<p style='text-align:center; font-weight:bold; margin-top:6px;'>Page {st.session_state.current_page} of {total_pages}</p>", unsafe_allow_html=True)
+            with p_col3:
+                if st.button("Next ➡️") and st.session_state.current_page < total_pages:
+                    st.session_state.current_page += 1
+                    st.rerun()
+
+            # လက်ရှိစာမျက်နှာအလိုက် ပြသရမည့် ဒေတာများကိုသာ စစ်ထုတ်ယူခြင်း
+            start_idx = (st.session_state.current_page - 1) * ITEMS_PER_PAGE
+            end_idx = start_idx + ITEMS_PER_PAGE
+            page_pdf = pdf.iloc[start_idx:end_idx]
+
+            # ကတ်ပြားများအား စက္ကန့်ပိုင်းအတွင်း ဆွဲပြခြင်း Loop
             cols_per_row = 7
-            for i in range(0, len(pdf), cols_per_row):
-                row_items = pdf.iloc[i : i + cols_per_row]
+            for i in range(0, len(page_pdf), cols_per_row):
+                row_items = page_pdf.iloc[i : i + cols_per_row]
                 cols = st.columns(cols_per_row)
 
                 for idx, (_, prod) in enumerate(row_items.iterrows()):
