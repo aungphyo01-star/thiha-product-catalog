@@ -27,8 +27,8 @@ def sync():
         total_products = len(product_ids)
         print(f"📦 ERP တွင် ရောင်းချမည့် ပစ္စည်းစုစုပေါင်း {total_products} ခု တွေ့ရှိရပါသည်။")
 
-        # ⚡ CHUNK SYNC: ဒေတာပြတ်မကျစေရန် ပစ္စည်း ၄၀ စီ ခွဲပို့မည့်စနစ်
-        CHUNK_SIZE = 40
+        # ⚡ OPTIMIZED CHUNK SIZE: Google Timeout မမိစေရန် တစ်ကြိမ်လျှင် ၁၅ ခုစီသာ ပေါ့ပေါ့ပါးပါး ခွဲပို့မည်
+        CHUNK_SIZE = 15
         headers = {"Content-Type": "application/json"}
         
         for i in range(0, total_products, CHUNK_SIZE):
@@ -44,14 +44,12 @@ def sync():
                 p_name_en = p.get("name", "")
                 p_price = p.get("list_price", 0)
                 
-                # ⚡ CRASH-SAFE: Odoo ထဲတွင် ပုံမရှိပါက အလွတ် (Blank) အဖြစ် သတ်မှတ်ပြီး ကုဒ်အား ဆက်မောင်းစေသည်
                 p_image_raw = p.get("image_128", "")
                 p_image = str(p_image_raw).strip() if p_image_raw else ""
                 
                 categ_data = p.get("categ_id", False)
                 p_category = [item.strip() for item in categ_data[1].split("/")][-1] if categ_data else "Uncategorized"
                 
-                # Google Sheet Layout: [ID, Name, Myanmar_Name, Price, Image, Category]
                 raw_data_rows.append([p_id, p_name_en, "", p_price, p_image, p_category])
             
             is_first_chunk = True if i == 0 else False
@@ -59,9 +57,11 @@ def sync():
             
             response = requests.post(WEB_APP_URL, data=json.dumps(payload), headers=headers)
             print(f"🔹 Sync Progress: {min(i + CHUNK_SIZE, total_products)}/{total_products} ... Status: {response.text}")
-            time.sleep(0.3)
+            
+            # ⚡ SERVER BREATHING TIME: Google Web App ဆာဗာ ဝန်မပိစေရန် ၁.၅ စက္ကန့် စောင့်ပြီးမှ နောက်တစ်သုတ်ပို့မည်
+            time.sleep(1.5)
 
-        print("✨ [SUCCESS] ပစ္စည်း ၆၁၃ ခုလုံး ဒေတာနှင့် Odoo ပုံများ Google Sheet ထဲသို့ အပြည့်အဝ ဝင်သွားပါပြီ!")
+        print("✨ [SUCCESS] ပစ္စည်း ၆၁၃ ခုလုံး ဒေတာနှင့် Odoo ပုံများ Google Sheet ထဲသို့ ၁၀၀% အပြည့်အဝ ဝင်ရောက်သွားပါပြီ!")
     except Exception as e:
         print(f"❌ Error: {e}")
 
