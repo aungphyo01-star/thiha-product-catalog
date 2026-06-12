@@ -17,7 +17,7 @@ PASSWORD = "f48f4bafa7c2b69d4156fc44e424182070c8287d"
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzwLwVZA4TEXEjvtWMvH_aTGPpo1DBoSqicsQF1utj2kZCNMfMUpLMQJ23zO_-yVCH3/exec"
 
 def sync():
-    print("🔄 Odoo ERP ထံမှ ကုန်ပစ္စည်းစာရင်းများကို စတင်ဆွဲယူနေပါသည်...")
+    print("🔄 Odoo ERP ထံမှ ကုန်ပစ္စည်းစာသားဒေတာများကို စတင်ဆွဲယူနေပါသည်...")
     try:
         common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
         uid = common.authenticate(DB, USERNAME, PASSWORD, {})
@@ -36,7 +36,7 @@ def sync():
             chunk_ids = product_ids[i : i + CHUNK_SIZE]
             chunk_products = models.execute_kw(
                 DB, uid, PASSWORD, "product.template", "read", 
-                [chunk_ids], {"fields": ["id", "name", "list_price", "categ_id"]}
+                [chunk_ids], {"fields": ["id", "name", "list_price", "categ_id"]} # image_128 ကို လုံးဝ ဖြုတ်ချထားပါသည်
             )
             
             raw_data_rows = []
