@@ -65,7 +65,7 @@ def load_catalog_data():
 
 df = load_catalog_data()
 
-# ⚡ Filter သီးသန့်အဖြစ် သတ်မှတ်ပေးမည့် ပစ္စည်းအမည်များစာရင်း
+# ⚡ Dropdown ထဲတွင် "⭐️ Selected Products" ရွေးလျှင် သီးသန့်ပြသမည့် ပစ္စည်းစာရင်း
 ALLOWED_PRODUCTS = [
     "Sunday 3in1 Coffee Mix",
     "Sunday 3in1 Tea Mix",
@@ -81,7 +81,6 @@ ALLOWED_PRODUCTS = [
 if df is not None:
     parsed_products = []
     
-    # ၁။ Google Sheet ထဲက ၅၉၈ ခုလုံးကို စာရင်းထဲ အရင်အပြည့်အဝ ထည့်သွင်းပါသည်
     for index, row in df.iterrows():
         try:
             p_id = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
@@ -121,24 +120,21 @@ if df is not None:
     if len(parsed_products) > 0:
         pdf = pd.DataFrame(parsed_products)
 
-        # ⚡ STRATEGIC FILTER LIST: Dropdown Menu ထဲတွင် "⭐️ Selected Products" ဆိုသော Filter အား ဒုတိယမြောက်နေရာတွင် အထူးတိုးထည့်ခြင်း
+        # Dropdown List ပြင်ဆင်ခြင်း
         categories = ["All Categories", "⭐️ Selected Products"] + sorted(pdf['category'].unique().tolist())
         selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
         search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
 
-        # ⚡ FILTER LOGIC: Dropdown ရွေးချယ်မှုအလိုက် စစ်ထုတ်ခြင်း
+        # Filter Logic ပိုင်း
         if selected_category == "⭐️ Selected Products":
-            # ရွေးချယ်ထားသော ပစ္စည်းအမည်များနှင့် ကိုက်ညီမှုရှိမရှိ စစ်ထုတ်ပေးမည့်စနစ်
             pdf = pdf[
                 pdf['raw_name'].isin(ALLOWED_PRODUCTS) | 
                 pdf['raw_mm'].isin(ALLOWED_PRODUCTS) | 
                 pdf['name'].isin(ALLOWED_PRODUCTS)
             ]
         elif selected_category != "All Categories":
-            # ပုံမှန် ကုန်ပစ္စည်းအုပ်စုအလိုက် စစ်ထုတ်ခြင်း
             pdf = pdf[pdf['category'] == selected_category]
 
-        # Search Bar ဖြင့် ထပ်မံ ရှာဖွေနိုင်ခြင်း
         if search_query:
             query = search_query.lower()
             pdf = pdf[pdf['name'].str.lower().str.contains(query, na=False)]
@@ -149,41 +145,4 @@ if df is not None:
             st.markdown(f'<div class="section-banner"><h2>📦 Product Catalog - {selected_category} ({total_items} ခု)</h2></div>', unsafe_allow_html=True)
             
             cols_per_row = 7
-            for i in range(0, len(pdf), cols_per_row):
-                row_items = pdf.iloc[i : i + cols_per_row]
-                cols = st.columns(cols_per_row)
-
-                for idx, (_, prod) in enumerate(row_items.iterrows()):
-                    with cols[idx]:
-                        with st.container():
-                            
-                            # Base64 Local Decoder
-                            if prod['image'] and prod['image'].lower() != "nan" and prod['image'] != "":
-                                st.markdown(f"""
-                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;">
-                                        <img src="data:image/png;base64,{prod['image']}" 
-                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
-                                    </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                st.markdown("""
-                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;">
-                                        <img src="https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product" 
-                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
-                                    </div>
-                                """, unsafe_allow_html=True)
-
-                            try:
-                                price_str = f"{int(prod['price']):,}"
-                            except:
-                                price_str = str(prod['price'])
-
-                            st.markdown(f"""
-                                <div class="product-info-box">
-                                    <div class="product-title">{prod['name']}</div>
-                                    <div class="product-price">{price_str} <span class="product-unit">ks</span></div>
-                                </div>
-                            """, unsafe_allow_html=True)
-                
-                # Row တစ်လိုင်းပြီးတိုင်း အောက်ခြေသို့ 35px စာ ဟပေးမည့် စနစ်
-                st.markdown('<div style="margin-bottom: 3
+            for i in
