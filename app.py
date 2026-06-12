@@ -31,23 +31,13 @@ st.markdown("""
         text-align: center;
     }
     .product-title {
-        font-weight: 600; 
-        font-size: 13px; 
-        color: #1e293b; 
-        line-height: 1.2; 
+        font-weight: 600; font-size: 13px; color: #1e293b; line-height: 1.2; 
         margin-bottom: 2px !important;
-        display: -webkit-box; 
-        -webkit-line-clamp: 2; 
-        -webkit-box-orient: vertical; 
-        overflow: hidden; 
-        min-height: 0px;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
+        overflow: hidden; min-height: 0px;
     }
     .product-price { 
-        font-size: 18px; 
-        font-weight: 800; 
-        color: #002d72; 
-        line-height: 1; 
-        margin-top: 2px !important;
+        font-size: 18px; font-weight: 800; color: #002d72; line-height: 1; margin-top: 2px !important;
     }
     .product-unit { font-size: 11px; font-weight: 400; color: #64748b; }
     </style>
@@ -65,17 +55,11 @@ def load_catalog_data():
 
 df = load_catalog_data()
 
-# ⚡ Dropdown ထဲတွင် "⭐️ Selected Products" ရွေးလျှင် သီးသန့်ပြသမည့် ပစ္စည်းစာရင်း
+# ⚡ Filter ထဲတွင် "⭐️ Selected Products" ရွေးလျှင် သီးသန့်ပြသမည့် ပစ္စည်းစာရင်း
 ALLOWED_PRODUCTS = [
-    "Sunday 3in1 Coffee Mix",
-    "Sunday 3in1 Tea Mix",
-    "Sunday Nhat Phyaw Coffee",
-    "Raw Tamarind",
-    "Red Butter Bean",
-    "Red Dragon Cigarettes (L)",
-    "Red Dragon Cigerattes Small",
-    "Red Valiant Cigarette",
-    "Rice Soap"
+    "Sunday 3in1 Coffee Mix", "Sunday 3in1 Tea Mix", "Sunday Nhat Phyaw Coffee",
+    "Raw Tamarind", "Red Butter Bean", "Red Dragon Cigarettes (L)",
+    "Red Dragon Cigerattes Small", "Red Valiant Cigarette", "Rice Soap"
 ]
 
 if df is not None:
@@ -102,47 +86,4 @@ if df is not None:
             elif p_name and p_name.lower() != "nan" and p_name != "":
                 display_title = p_name
             else:
-                display_title = f"Product #{p_id}" if p_id else f"Unnamed Item ({p_category})"
-            
-            if p_id != "" and p_id.lower() != "nan":
-                parsed_products.append({
-                    "id": p_id,
-                    "name": display_title,
-                    "raw_name": p_name,
-                    "raw_mm": p_myanmar,
-                    "price": p_price,
-                    "image": p_image,
-                    "category": p_category
-                })
-        except:
-            pass
-        
-    if len(parsed_products) > 0:
-        pdf = pd.DataFrame(parsed_products)
-
-        # Dropdown List ပြင်ဆင်ခြင်း
-        categories = ["All Categories", "⭐️ Selected Products"] + sorted(pdf['category'].unique().tolist())
-        selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
-        search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
-
-        # Filter Logic ပိုင်း
-        if selected_category == "⭐️ Selected Products":
-            pdf = pdf[
-                pdf['raw_name'].isin(ALLOWED_PRODUCTS) | 
-                pdf['raw_mm'].isin(ALLOWED_PRODUCTS) | 
-                pdf['name'].isin(ALLOWED_PRODUCTS)
-            ]
-        elif selected_category != "All Categories":
-            pdf = pdf[pdf['category'] == selected_category]
-
-        if search_query:
-            query = search_query.lower()
-            pdf = pdf[pdf['name'].str.lower().str.contains(query, na=False)]
-
-        total_items = len(pdf)
-        
-        if total_items > 0:
-            st.markdown(f'<div class="section-banner"><h2>📦 Product Catalog - {selected_category} ({total_items} ခု)</h2></div>', unsafe_allow_html=True)
-            
-            cols_per_row = 7
-            for i in
+                display_title = f
