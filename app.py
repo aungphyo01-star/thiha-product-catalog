@@ -4,7 +4,7 @@ import pandas as pd
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling: ကတ်များ ကျစ်လျစ်သပ်ရပ်ပြီး ပစ္စည်းအမည်နှင့် စျေးနှုန်း ကပ်နေစေရန် ညှိခြင်း
+# UI Global Styling
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -40,9 +40,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# သင့် Google Drive Folder ID
-DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
-
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
@@ -56,7 +53,6 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # Index စနစ်ဖြင့် Column Data များကို တိုက်ရိုက်ကောက်ယူခြင်း
     parsed_products = []
     
     for index, row in df.iterrows():
@@ -70,10 +66,9 @@ if df is not None:
             except:
                 p_price = 0.0
                 
+            p_img_url = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
             p_category = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
-            if p_category.lower() == "nan" or p_category == "":
-                p_category = "Uncategorized"
-                
+            
             display_title = p_myanmar if (p_myanmar and p_myanmar.lower() != "nan" and p_myanmar != "") else p_name
             
             if display_title.lower() != "nan" and p_id != "":
@@ -81,6 +76,7 @@ if df is not None:
                     "id": p_id,
                     "name": display_title,
                     "price": p_price,
+                    "image": p_img_url,
                     "category": p_category
                 })
         except:
@@ -113,15 +109,13 @@ if df is not None:
                 for idx, (_, prod) in enumerate(row_items.iterrows()):
                     with cols[idx]:
                         with st.container():
-                            p_id = prod["id"]
                             
-                            # ⚡ BULLETPROOF GOOGLE DRIVE CONNECTOR:
-                            # Folder အား Public ပေးထားပြီးဖြစ်သဖြင့် ၎င်းထဲမှ ပုံဖိုင်များကို ID အလိုက် တိုက်ရိုက်ဆွဲထုတ်ပေးမည့် တရားဝင် ဝင်ပေါက်ဖြစ်ပါသည်။
-                            drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}={p_id}"
+                            # ⚡ CDN DIRECT HIGH-SPEED VIEW: Sheet ထဲက CDN link အတိုင်း ဝုန်းခနဲ တိုက်ရိုက်ဆွဲပြခြင်း
+                            final_img = prod['image'] if (prod['image'] and prod['image'] != "") else "https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product"
                             
                             st.markdown(f"""
                                 <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                    <img src="https://drive.google.com/thumbnail?id={DRIVE_FOLDER_ID}&name={p_id}.png" 
+                                    <img src="{final_img}" 
                                          style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;"
                                          onerror="this.onerror=null; this.src='https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product';">
                                 </div>
@@ -140,7 +134,5 @@ if df is not None:
                             """, unsafe_allow_html=True)
         else:
             st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
-    else:
-        st.info("ပြသရန် ဒေတာ မရှိပါ။")
 else:
     st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
