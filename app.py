@@ -23,6 +23,10 @@ st.markdown("""
         justify-content: flex-start; /* ⚡ အပေါ်ကပ်စနစ် သုံးထားပါသည် */
         min-height: 180px; /* ⚡ ဓာတ်ပုံပါဝင်သော ကတ်ပြားအမြင့်ကို ပိုမိုကျစ်လျစ်အောင် ညှိထားပါသည် */
         margin-bottom: 100px !important; /* ⚡ ဤလိုင်းကို အသစ်ထည့်ပေးပါ - တစ်လိုင်းနဲ့တစ်လိုင်းကြားကို ဟပေးမည့် ဆက်တင် ဖြစ်ပါသည် */
+        /* ⚡ ဤကုဒ် block အသစ်ကို လက်ရှိ div[data-testid="stContainer"] ရဲ့ အောက်နားမှာ ကူးထည့်ပေးလိုက်ပါ */
+    div[data-testid="stColumn"] {
+    margin-bottom: 25px !important; /* ⚡ 25px ဆိုလျှင် တစ်လိုင်းနဲ့တစ်လိုင်း ကြည့်ကောင်းရုံ ဟသွားပါလိမ့်မည် */
+}
     }
     .product-info-box {
         display: flex;
