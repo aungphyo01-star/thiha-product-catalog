@@ -4,7 +4,7 @@ import pandas as pd
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling
+# UI Global Styling: ပစ္စည်းအမည်နှင့် စျေးနှုန်း အနီးကပ်ဆုံး ဖြစ်သွားစေရန် Padding နှင့် Margin များ ညှိခြင်း
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -16,31 +16,44 @@ st.markdown("""
         background-color: white;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px;
-        padding: 10px !important;
+        padding: 8px !important;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        min-height: 190px;
+        justify-content: flex-start; /* ⚡ အပေါ်ကပ်စနစ် သုံးထားပါသည် */
+        min-height: 180px; /* ⚡ ဓာတ်ပုံပါဝင်သော ကတ်ပြားအမြင့်ကို ပိုမိုကျစ်လျစ်အောင် ညှိထားပါသည် */
     }
     .product-info-box {
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        margin-top: 6px;
+        gap: 0px; /* ⚡ စာသားနှစ်ခုကြား ကွက်လပ်ကို သုညအထိ ချုံ့ထားပါသည် */
+        margin-top: 4px;
         text-align: center;
     }
     .product-title {
-        font-weight: 600; font-size: 15px; color: #1e293b; line-height: 1; 
-        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
-        overflow: hidden; min-height: 34px;
+        font-weight: 600; 
+        font-size: 13px; 
+        color: #1e293b; 
+        line-height: 1.2; 
+        margin-bottom: 2px !important; /* ⚡ အောက်ခြေကွက်လပ်ကို ဖယ်ရှားထားပါသည် */
+        display: -webkit-box; 
+        -webkit-line-clamp: 2; 
+        -webkit-box-orient: vertical; 
+        overflow: hidden; 
+        min-height: 32px;
     }
-    .product-price { font-size: 18px; font-weight: 800; color: #002d72; }
+    .product-price { 
+        font-size: 18px; 
+        font-weight: 800; 
+        color: #002d72; 
+        line-height: 1; /* ⚡ စျေးနှုန်းစာသား အမြင့်ကို အကျစ်လျစ်ဆုံး လုပ်ထားပါသည် */
+        margin-top: 0px !important;
+    }
     .product-unit { font-size: 11px; font-weight: 400; color: #64748b; }
     </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data(ttl=60) # ⚡ Update သိသာစေရန် Cache သက်တမ်းကို ၁ မိနစ်သာ ထားရှိပါသည်
+@st.cache_data(ttl=60)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
     url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv"
@@ -71,7 +84,6 @@ if df is not None:
             if p_category.lower() == "nan" or p_category == "":
                 p_category = "Uncategorized"
                 
-            # ⚡ CRITICAL FIX: အမည်မပါသော ပစ္စည်းများကို ID ဖြင့် အစားထိုးပြသပြီး ဒေတာ ၅၉၈ ခုလုံး အပြည့်ပေါ်စေရန် ထိန်းသိမ်းခြင်း
             if p_myanmar and p_myanmar.lower() != "nan" and p_myanmar != "":
                 display_title = p_myanmar
             elif p_name and p_name.lower() != "nan" and p_name != "":
@@ -118,17 +130,17 @@ if df is not None:
                     with cols[idx]:
                         with st.container():
                             
-                            # ⚡ Base64 Local Decoder
+                            # Base64 Local Decoder
                             if prod['image'] and prod['image'].lower() != "nan" and prod['image'] != "":
                                 st.markdown(f"""
-                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;">
                                         <img src="data:image/png;base64,{prod['image']}" 
                                              style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
                                     </div>
                                 """, unsafe_allow_html=True)
                             else:
                                 st.markdown("""
-                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;">
                                         <img src="https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product" 
                                              style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
                                     </div>
@@ -139,6 +151,7 @@ if df is not None:
                             except:
                                 price_str = str(prod['price'])
 
+                            # ⚡ ကပ်လျက်ဖြစ်သွားစေရန် ထိန်းချုပ်ထားသော CSS တည်ဆောက်ပုံ
                             st.markdown(f"""
                                 <div class="product-info-box">
                                     <div class="product-title">{prod['name']}</div>
