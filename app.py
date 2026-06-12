@@ -47,7 +47,7 @@ st.markdown("""
         font-weight: 800; 
         color: #002d72; 
         line-height: 1; 
-        margin-top: -6px !important; /* ⚡ ဈေးနှုန်းစာသားအား အမည်နှင့် ကပ်သွားစေရန် အပေါ်သို့ ဆွဲတင်ထားပါသည် */
+        margin-top: 0px !important; /* ⚡ ဈေးနှုန်းစာသားအား အမည်နှင့် ကပ်သွားစေရန် အပေါ်သို့ ဆွဲတင်ထားပါသည် */
     }
     .product-unit { font-size: 11px; font-weight: 400; color: #64748b; }
     </style>
