@@ -66,7 +66,6 @@ if df is not None:
             except:
                 p_price = 0.0
                 
-            p_image = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
             p_category = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
             
             display_title = p_myanmar if (p_myanmar and p_myanmar.lower() != "nan" and p_myanmar != "") else p_name
@@ -76,7 +75,6 @@ if df is not None:
                     "id": p_id,
                     "name": display_title,
                     "price": p_price,
-                    "image": p_image,
                     "category": p_category
                 })
         except:
@@ -109,22 +107,19 @@ if df is not None:
                 for idx, (_, prod) in enumerate(row_items.iterrows()):
                     with cols[idx]:
                         with st.container():
+                            p_id = prod["id"]
                             
-                            # ⚡ UNBREAKABLE LOCAL RENDER: Sheet ထဲတွင် လုံခြုံစွာသိမ်းထားသော Base64 စာသားကို သုံး၍ ပုံအစစ်အား နေရာတင် တိုက်ရိုက်ဖော်ပြခြင်း
-                            if prod['image'] and prod['image'].lower() != "nan" and prod['image'] != "":
-                                st.markdown(f"""
-                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                        <img src="data:image/png;base64,{prod['image']}" 
-                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
-                                    </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                st.markdown("""
-                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                        <img src="https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product" 
-                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
-                                    </div>
-                                """, unsafe_allow_html=True)
+                            # ⚡ ODOO LIVE NATIVE IMAGE LINK: 
+                            # product.product Model အတိုင်း ID အလိုက် ပုံအစစ်များကို Odoo ERP ဆီမှ တိုက်ရိုက်ဆွဲထုတ်ပြသခြင်း
+                            odoo_img_url = f"https://odoo.linklusion.co.jp/web/image/product.product/{p_id}/image_128"
+                            
+                            st.markdown(f"""
+                                <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                                    <img src="{odoo_img_url}" 
+                                         style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;"
+                                         onerror="this.onerror=null; this.src='https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product';">
+                                </div>
+                            """, unsafe_allow_html=True)
 
                             try:
                                 price_str = f"{int(prod['price']):,}"
