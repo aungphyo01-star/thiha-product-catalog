@@ -31,7 +31,7 @@ st.markdown("""
         text-align: center;
     }
     .product-title {
-        font-weight: 600; font-size: 13px; color: #1e293b; line-height: 1.3; 
+        font-weight: 600; font-size: 18px; color: #1e293b; line-height: 1; 
         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
         overflow: hidden; min-height: 34px;
     }
