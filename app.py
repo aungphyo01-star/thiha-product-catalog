@@ -40,7 +40,7 @@ def load_catalog_data():
 
 df = load_catalog_data()
 
-# ⚡ Selected Products List
+# Selected Products List
 ALLOWED_PRODUCTS = [
     "Sunday 3in1 Coffee Mix", "Sunday 3in1 Tea Mix", "Sunday Nhat Phyaw Coffee",
     "Raw Tamarind", "Red Butter Bean", "Red Dragon Cigarettes (L)",
@@ -85,8 +85,15 @@ if df is not None:
         with f_col2:
             search_q = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
 
-        # Filter Logic
+        # ⚡ BULLETPROOF MULTI-LINE FILTER: စာကြောင်းရှည်၍ ပြတ်မကျစေရန် အောက်သို့ စနစ်တကျ ခွဲချထားပါသည်
         if selected_cat == "⭐️ Selected Products":
-            pdf = pdf[pdf['raw_name'].isin(ALLOWED_PRODUCTS) | pdf['raw_mm'].isin(ALLOWED_PRODUCTS) | pdf['name'].isin(ALLOWED_PRODUCTS)]
+            c1 = pdf['raw_name'].isin(ALLOWED_PRODUCTS)
+            c2 = pdf['raw_mm'].isin(ALLOWED_PRODUCTS)
+            c3 = pdf['name'].isin(ALLOWED_PRODUCTS)
+            pdf = pdf[c1 | c2 | c3]
         elif selected_cat != "All Categories":
-            pdf = pdf[pdf['category'] ==
+            match_cat = pdf['category'] == selected_cat
+            pdf = pdf[match_cat]
+
+        if search_q:
+            match_q = pdf['name'].str.lower().str.contains(search_q.lower(), na=False)
