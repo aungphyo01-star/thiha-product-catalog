@@ -40,6 +40,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# ⚡ မင်းရဲ့ Google Drive Folder ID စစ်စစ် (ဤ Folder အား Anyone with link can view ပေးထားရန် လိုအပ်ပါသည်)
+DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
+
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
@@ -53,7 +56,6 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # Index စနစ်ဖြင့် အကွက်တစ်ခုချင်းစီအား အတိအကျကောက်ယူခြင်း (Unbreakable Column Fixed)
     parsed_products = []
     
     for index, row in df.iterrows():
@@ -67,13 +69,10 @@ if df is not None:
             except:
                 p_price = 0.0
                 
-            p_image = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
-            
             p_category = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
             if p_category.lower() == "nan" or p_category == "":
                 p_category = "Uncategorized"
                 
-            # Myanmar_Name ကွက်လပ်ဖြစ်နေပါက Name ကို သုံးမည်
             display_title = p_myanmar if (p_myanmar and p_myanmar.lower() != "nan" and p_myanmar != "") else p_name
             
             if display_title.lower() != "nan" and p_id != "":
@@ -81,7 +80,6 @@ if df is not None:
                     "id": p_id,
                     "name": display_title,
                     "price": p_price,
-                    "image": p_image,
                     "category": p_category
                 })
         except:
@@ -90,7 +88,6 @@ if df is not None:
     if len(parsed_products) > 0:
         pdf = pd.DataFrame(parsed_products)
 
-        # Filter & Search UI
         categories = ["All Categories"] + sorted(pdf['category'].unique().tolist())
         selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
         search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
@@ -115,22 +112,19 @@ if df is not None:
                 for idx, (_, prod) in enumerate(row_items.iterrows()):
                     with cols[idx]:
                         with st.container():
+                            p_id = prod["id"]
                             
-                            # ⚡ BASE64 IMAGE DECODER SYSTEM: Sheet ထဲက ပုံစာသားကို ပုံအစစ်အဖြစ် တိုက်ရိုက်ပြန်ဖော်ပြခြင်း
-                            if prod['image'] and prod['image'].lower() != "nan" and prod['image'] != "":
-                                st.markdown(f"""
-                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                        <img src="data:image/png;base64,{prod['image']}" 
-                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
-                                    </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                st.markdown("""
-                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                        <img src="https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product" 
-                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
-                                    </div>
-                                """, unsafe_allow_html=True)
+                            # ⚡ THE GOLDEN GOOGLE DRIVE LINK: Google Drive Thumbnail API ပုံစံအမှန်ဖြစ်ပါသည်။
+                            # ၎င်းသည် Folder ID နှင့် ဖိုင်အမည် (ID.png) ကို သုံး၍ အကောင့်ဝင်စရာမလိုဘဲ ပုံကို ရာနှုန်းပြည့် ဆွဲပြပေးနိုင်သော တရားဝင် လင့်ခ်ဖြစ်ပါသည်။
+                            drive_img_url = f"https://drive.google.com/thumbnail?id={DRIVE_FOLDER_ID}&sz=w300&name={p_id}.png"
+                            
+                            st.markdown(f"""
+                                <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                                    <img src="{drive_img_url}" 
+                                         style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;"
+                                         onerror="this.onerror=null; this.src='https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product';">
+                                </div>
+                            """, unsafe_allow_html=True)
 
                             try:
                                 price_str = f"{int(prod['price']):,}"
