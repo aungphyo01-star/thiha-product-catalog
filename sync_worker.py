@@ -17,51 +17,52 @@ PASSWORD = "f48f4bafa7c2b69d4156fc44e424182070c8287d"
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzwLwVZA4TEXEjvtWMvH_aTGPpo1DBoSqicsQF1utj2kZCNMfMUpLMQJ23zO_-yVCH3/exec"
 
 def sync():
-    print("🔄 Odoo ERP ထံမှ product.product Live ဒေတာများကို စတင်ဆွဲယူနေပါသည်...")
+    print("🔄 Odoo ERP မှ Live ဒေတာများနှင့် ပုံများကို သွေးအေးအေးဖြင့် စတင်ဆွဲယူနေပါသည်...")
     try:
         common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
         uid = common.authenticate(DB, USERNAME, PASSWORD, {})
         models = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/object")
         
-        # ⚡ STRATEGIC SHIFT: Variant စုံလင်စွာရရှိရန် product.product model အား ပြောင်းလဲအသုံးပြုခြင်း
         product_ids = models.execute_kw(DB, uid, PASSWORD, "product.product", "search", [[("sale_ok", "=", True)]], {"limit": 2000})
         total_products = len(product_ids)
-        print(f"📦 ERP တွင် ရောင်းချမည့် ပစ္စည်းကွဲစုစုပေါင်း {total_products} ခု တွေ့ရှိရပါသည်။")
+        print(f"📦 ERP တွင် ရောင်းချမည့် ပစ္စည်းစုစုပေါင်း {total_products} ခု တွေ့ရှိရပါသည်။")
 
-        CHUNK_SIZE = 50
+        # ⚡ MAXIMUM SAFETY CHUNK: Google Timeout လုံးဝမမိစေရန် ၁၂ ခုစီသာ စိပ်စိပ်ခွဲပို့မည်
+        CHUNK_SIZE = 12
         headers = {"Content-Type": "application/json"}
         
         for i in range(0, total_products, CHUNK_SIZE):
             chunk_ids = product_ids[i : i + CHUNK_SIZE]
-            
-            # product.product အတိုင်း field များကို ဖတ်ယူခြင်း
             chunk_products = models.execute_kw(
                 DB, uid, PASSWORD, "product.product", "read", 
-                [chunk_ids], {"fields": ["id", "display_name", "list_price", "categ_id"]}
+                [chunk_ids], {"fields": ["id", "display_name", "list_price", "categ_id", "image_128"]}
             )
             
             raw_data_rows = []
             for p in chunk_products:
                 p_id = str(p.get("id", ""))
-                
-                # display_name သည် Variant နာမည်ပါ အလိုအလျောက် ပူးတွဲပါဝင်ပြီးသားဖြစ်ပါသည်
-                p_name_en = p.get("display_name", "") 
+                p_name_en = p.get("display_name", "")
                 p_price = p.get("list_price", 0)
+                
+                # Odoo ထဲမှ Base64 ပုံစာသားအား ဆွဲယူခြင်း
+                p_image_raw = p.get("image_128", "")
+                p_image = str(p_image_raw).strip() if p_image_raw else ""
                 
                 categ_data = p.get("categ_id", False)
                 p_category = [item.strip() for item in categ_data[1].split("/")][-1] if categ_data else "Uncategorized"
                 
-                # Image နေရာအား ဗလာထား၍ ပေါ့ပါးစွာ ပို့ဆောင်သည်
-                raw_data_rows.append([p_id, p_name_en, "", p_price, "", p_category])
+                raw_data_rows.append([p_id, p_name_en, "", p_price, p_image, p_category])
             
             is_first_chunk = True if i == 0 else False
             payload = {"is_first": is_first_chunk, "data": raw_data_rows}
             
             response = requests.post(WEB_APP_URL, data=json.dumps(payload), headers=headers)
             print(f"🔹 Sync Progress: {min(i + CHUNK_SIZE, total_products)}/{total_products} ... Status: {response.text}")
-            time.sleep(0.2)
+            
+            # ⚡ SAFE DELAY: ဆာဗာအချင်းချင်း ဒေတာအဝင် ညှပ်မသွားစေရန် ၂.၅ စက္ကန့် စောင့်ဆိုင်းပေးခြင်း
+            time.sleep(2.5)
 
-        print(f"✨ [SUCCESS] ပစ္စည်းစုစုပေါင်း {total_products} ခုလုံး Google Sheet ထဲသို့ အပြည့်အဝ ဝင်သွားပါပြီ!")
+        print(f"✨ [SUCCESS] ပစ္စည်း {total_products} ခုလုံး ဒေတာနှင့် ပုံများ Google Sheet ထဲသို့ ၁၀၀% အပြည့်အဝ ရောက်ရှိသွားပါပြီ!")
     except Exception as e:
         print(f"❌ Error: {e}")
 
