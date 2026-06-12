@@ -53,16 +53,82 @@ if df is not None:
         try:
             p_id = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
             p_name = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
-            p_myanmar = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ""
+            p_mm = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ""
             
             try:
                 p_price = float(row.iloc[3])
             except:
                 p_price = 0.0
                 
-            p_image = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
-            p_category = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
-            if p_category.lower() == "nan" or p_category == "":
-                p_category = "Uncategorized"
+            p_img = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
+            p_cat = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
+            
+            # ⚡ BULLETPROOF ONE-LINER: စာကြောင်းပြတ်မကျစေရန် logic ကို တစ်လိုင်းတည်းဖြင့် အပြီးသတ် ချုံ့ထားပါသည်
+            title = p_mm if (p_mm and p_mm.lower() != "nan") else (p_name if (p_name and p_name.lower() != "nan") else f"Item #{p_id}")
+            
+            if p_id and p_id.lower() != "nan":
+                parsed_products.append({
+                    "id": p_id, "name": title, "raw_name": p_name,
+                    "raw_mm": p_mm, "price": p_price, "image": p_img, "category": p_cat
+                })
+        except:
+            pass
+        
+    if len(parsed_products) > 0:
+        pdf = pd.DataFrame(parsed_products)
+
+        # Dropdown Menu
+        cats = ["All Categories", "⭐️ Selected Products"] + sorted(pdf['category'].unique().tolist())
+        selected_cat = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", cats)
+        search_q = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
+
+        # Filter Logic
+        if selected_cat == "⭐️ Selected Products":
+            pdf = pdf[pdf['raw_name'].isin(ALLOWED_PRODUCTS) | pdf['raw_mm'].isin(ALLOWED_PRODUCTS) | pdf['name'].isin(ALLOWED_PRODUCTS)]
+        elif selected_cat != "All Categories":
+            pdf = pdf[pdf['category'] == selected_cat]
+
+        if search_q:
+            pdf = pdf[pdf['name'].str.lower().str.contains(search_q.lower(), na=False)]
+
+        total_items = len(pdf)
+        
+        if total_items > 0:
+            st.markdown(f'<div class="section-banner"><h2>📦 Product Catalog - {selected_cat} ({total_items} ခု)</h2></div>', unsafe_allow_html=True)
+            
+            cols_per_row = 7
+            for i in range(0, len(pdf), cols_per_row):
+                row_items = pdf.iloc[i : i + cols_per_row]
+                cols = st.columns(cols_per_row)
+
+                for idx, (_, prod) in enumerate(row_items.iterrows()):
+                    with cols[idx]:
+                        with st.container():
+                            src = f"data:image/png;base64,{prod['image']}" if (prod['image'] and prod['image'].lower() != "nan") else "https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product"
+                                
+                            st.markdown(f"""
+                                <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;">
+                                    <img src="{src}" style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
+                                </div>
+                            """, unsafe_allow_html=True)
+
+                            try:
+                                price_str = f"{int(prod['price']):,}"
+                            except:
+                                price_str = str(prod['price'])
+
+                            st.markdown(f"""
+                                <div class="product-info-box">
+                                    <div class="product-title">{prod['name']}</div>
+                                    <div class="product-price">{price_str} <span class="product-unit">ks</span></div>
+                                </div>
+                            """, unsafe_allow_html=True)
                 
-            # ⚡ SHORT-HAND TITLES: စာကြောင်းပြ
+                st.write("")
+                st.markdown('<div style="height:35px;"></div>', unsafe_allow_html=True)
+        else:
+            st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
+    else:
+        st.info("ပြသရန် ဒေတာ မရှိပါ။")
+else:
+    st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
