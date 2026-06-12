@@ -4,7 +4,7 @@ import pandas as pd
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling
+# UI Global Styling: ကတ်များ ကျစ်လျစ်သပ်ရပ်ပြီး ပစ္စည်းအမည်နှင့် စျေးနှုန်း ကပ်နေစေရန် ညှိခြင်း
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -53,6 +53,7 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
+    # Index စနစ်ဖြင့် Column Data များကို တိုက်ရိုက်ကောက်ယူခြင်း (Robust Matching)
     parsed_products = []
     
     for index, row in df.iterrows():
@@ -66,9 +67,10 @@ if df is not None:
             except:
                 p_price = 0.0
                 
-            p_img_url = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
             p_category = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
-            
+            if p_category.lower() == "nan" or p_category == "":
+                p_category = "Uncategorized"
+                
             display_title = p_myanmar if (p_myanmar and p_myanmar.lower() != "nan" and p_myanmar != "") else p_name
             
             if display_title.lower() != "nan" and p_id != "":
@@ -76,7 +78,6 @@ if df is not None:
                     "id": p_id,
                     "name": display_title,
                     "price": p_price,
-                    "image": p_img_url,
                     "category": p_category
                 })
         except:
@@ -85,6 +86,7 @@ if df is not None:
     if len(parsed_products) > 0:
         pdf = pd.DataFrame(parsed_products)
 
+        # Filter & Search UI
         categories = ["All Categories"] + sorted(pdf['category'].unique().tolist())
         selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
         search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
@@ -109,13 +111,15 @@ if df is not None:
                 for idx, (_, prod) in enumerate(row_items.iterrows()):
                     with cols[idx]:
                         with st.container():
+                            p_id = prod["id"]
                             
-                            # ⚡ CDN DIRECT HIGH-SPEED VIEW: Sheet ထဲက CDN link အတိုင်း ဝုန်းခနဲ တိုက်ရိုက်ဆွဲပြခြင်း
-                            final_img = prod['image'] if (prod['image'] and prod['image'] != "") else "https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product"
+                            # ⚡ HIGH-SPEED ODOO IMAGE CONNECT: 
+                            # Page Loading လုံးဝမကြာစေရန် HTML Browser native Render ကိုသုံး၍ Odoo Server ဆီမှ Live View ပုံကို လှမ်းဆွဲပြသခြင်း
+                            odoo_img_url = f"https://odoo.linklusion.co.jp/web/image/product.template/{p_id}/image_128"
                             
                             st.markdown(f"""
                                 <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                    <img src="{final_img}" 
+                                    <img src="{odoo_img_url}" 
                                          style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;"
                                          onerror="this.onerror=null; this.src='https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product';">
                                 </div>
@@ -134,5 +138,7 @@ if df is not None:
                             """, unsafe_allow_html=True)
         else:
             st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
+    else:
+        st.info("ပြသရန် ဒေတာ မရှိပါ။")
 else:
     st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
