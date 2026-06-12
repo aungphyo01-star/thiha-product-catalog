@@ -40,7 +40,7 @@ st.markdown("""
         -webkit-line-clamp: 2; 
         -webkit-box-orient: vertical; 
         overflow: hidden; 
-        min-height: 25px;
+        min-height: 0px;
     }
     .product-price { 
         font-size: 18px; 
