@@ -4,7 +4,7 @@ import pandas as pd
 # --- Webpage Configuration ---
 st.set_page_config(page_title="Enterprise Product Catalog", layout="wide")
 
-# UI Global Styling: ပစ္စည်းအမည်နှင့် စျေးနှုန်း အနီးကပ်ဆုံး ဖြစ်သွားစေရန် Padding နှင့် Margin များ ညှိခြင်း
+# UI Global Styling: ပစ္စည်းအမည်နှင့် စျေးနှုန်း အကွာအဝေး အနေတော်ဖြစ်စေရန် margin-top အား 2px သို့ ညှိထားပါသည်
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; } 
@@ -40,14 +40,14 @@ st.markdown("""
         -webkit-line-clamp: 2; 
         -webkit-box-orient: vertical; 
         overflow: hidden; 
-        min-height: 0px; /* ⚡ စာတစ်လိုင်းထဲရှိလျှင် အောက်ခြေအလိုအလျောက် ဟနေခြင်းအား 0px ဖြင့် ပိတ်ဆို့ထားပါသည် */
+        min-height: 0px;
     }
     .product-price { 
         font-size: 18px; 
         font-weight: 800; 
         color: #002d72; 
         line-height: 1; 
-        margin-top: 0px !important; /* ⚡ ဈေးနှုန်းစာသားအား အမည်နှင့် ကပ်သွားစေရန် အပေါ်သို့ ဆွဲတင်ထားပါသည် */
+        margin-top: 2px !important; /* ⚡ -6px မှ 2px သို့ ပြောင်းလဲထားသဖြင့် စိလွန်းခြင်းမှ သက်သာပြီး အနေတော် ဖြစ်သွားပါမည် */
     }
     .product-unit { font-size: 11px; font-weight: 400; color: #64748b; }
     </style>
@@ -64,6 +64,20 @@ def load_catalog_data():
         return None
 
 df = load_catalog_data()
+
+# ⚡ WHITE-LIST SELECTION: ကတ်တလောက်ပေါ်တွင် ပြသရန် ခွင့်ပြုထားသော ပစ္စည်းအမည်များစာရင်း
+# 💡 နောက်ပိုင်း ပစ္စည်းအသစ် ထပ်ပြချင်ရင် ဖြစ်စေ၊ ပြန်ဖြုတ်ချင်ရင်ဖြစ်စေ ဤစာရင်းထဲတွင် စာလုံးပေါင်းကွက်တိအတိုင်း လာပြင်ရုံရုံပါပဲဗျာ
+ALLOWED_PRODUCTS = [
+    "Sunday 3in1 Coffee Mix",
+    "Sunday 3in1 Tea Mix",
+    "Sunday Nhat Phyaw Coffee",
+    "Raw Tamarind",
+    "Red Butter Bean",
+    "Red Dragon Cigarettes (L)",
+    "Red Dragon Cigerattes Small",
+    "Red Valiant Cigarette",
+    "Rice Soap"
+]
 
 if df is not None:
     parsed_products = []
@@ -91,14 +105,17 @@ if df is not None:
             else:
                 display_title = f"Product #{p_id}" if p_id else f"Unnamed Item ({p_category})"
             
+            # ⚡ STRATEGIC FILTER: ကိုယ်ရွေးချယ်ထားတဲ့ ပစ္စည်းအမည်များ (ALLOWED_PRODUCTS) နှင့် ကိုက်ညီမှသာ စာရင်းထဲ ထည့်မည်
+            # (Odoo display_name သို့မဟုတ် မြန်မာအမည် တစ်ခုခုနှင့် ကိုက်ညီလျှင် ပြသပေးပါမည်)
             if p_id != "" and p_id.lower() != "nan":
-                parsed_products.append({
-                    "id": p_id,
-                    "name": display_title,
-                    "price": p_price,
-                    "image": p_image,
-                    "category": p_category
-                })
+                if (p_name in ALLOWED_PRODUCTS) or (p_myanmar in ALLOWED_PRODUCTS) or (display_title in ALLOWED_PRODUCTS):
+                    parsed_products.append({
+                        "id": p_id,
+                        "name": display_title,
+                        "price": p_price,
+                        "image": p_image,
+                        "category": p_category
+                    })
         except:
             pass
         
@@ -158,11 +175,11 @@ if df is not None:
                                 </div>
                             """, unsafe_allow_html=True)
                 
-                # ⚡ FIXED LOOP ALIGNMENT: Row တစ်လိုင်း (ပစ္စည်း ၇ ခု) ပြီးတိုင်း အောက်ခြေသို့ 35px စာ သန့်သန့်ရပ်ရပ် တွန်းချပေးမည့် နေရာအမှန် ဖြစ်ပါသည်
+                # Row တစ်လိုင်းပြီးတိုင်း အောက်ခြေသို့ 35px စာ ဟပေးမည့် စနစ်
                 st.markdown('<div style="margin-bottom: 35px;"></div>', unsafe_allow_html=True)
         else:
             st.info("ကုန်ပစ္စည်း မတွေ့ပါ။")
     else:
-        st.info("ပြသရန် ဒေတာ မရှိပါ။")
+        st.info("ရွေးချယ်ထားသော သတ်မှတ်ချက်များနှင့် ကိုက်ညီသည့် ပြသရန်ကုန်ပစ္စည်း မရှိသေးပါ။")
 else:
     st.warning("Google Sheet ထံမှ ဒေတာ ဖတ်မရဖြစ်နေပါသည်။")
