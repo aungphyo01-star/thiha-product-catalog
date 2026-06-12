@@ -22,7 +22,7 @@ st.markdown("""
         flex-direction: column;
         justify-content: flex-start; /* ⚡ အပေါ်ကပ်စနစ် သုံးထားပါသည် */
         min-height: 180px; /* ⚡ ဓာတ်ပုံပါဝင်သော ကတ်ပြားအမြင့်ကို ပိုမိုကျစ်လျစ်အောင် ညှိထားပါသည် */
-        margin-bottom: 60px !important; /* ⚡ ဤလိုင်းကို အသစ်ထည့်ပေးပါ - တစ်လိုင်းနဲ့တစ်လိုင်းကြားကို ဟပေးမည့် ဆက်တင် ဖြစ်ပါသည် */
+        margin-bottom: 100px !important; /* ⚡ ဤလိုင်းကို အသစ်ထည့်ပေးပါ - တစ်လိုင်းနဲ့တစ်လိုင်းကြားကို ဟပေးမည့် ဆက်တင် ဖြစ်ပါသည် */
     }
     .product-info-box {
         display: flex;
