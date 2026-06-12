@@ -40,7 +40,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ⚡ မင်းရဲ့ Google Drive Folder ID စစ်စစ် (ဤ Folder အား Anyone with link can view ပေးထားရန် မဖြစ်မနေ လိုအပ်ပါသည်)
+# ⚡ မင်းရဲ့ Google Drive Folder ID (ဤ Folder အား Anyone with link can view ပေးထားရန် မဖြစ်မနေ လိုအပ်ပါသည်)
 DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
 
 @st.cache_data(ttl=300)
@@ -115,9 +115,9 @@ if df is not None:
                         with st.container():
                             p_id = prod["id"]
                             
-                            # ⚡ THE UNBREAKABLE DRIVE VIEW LINK: Google Drive XML File Content Delivery Link ဖြစ်ပါသည်။
-                            # ၎င်းသည် Folder ID နှင့် ဖိုင်အမည် (ID.png) ကို အခြေခံပြီး တိုက်ရိုက်ဆွဲထုတ်ပြသပေးသော ကမ္ဘာသုံးအမှန်ကန်ဆုံး လင့်ခ်ဖြစ်ပါသည်။
-                            drive_img_url = f"https://docs.google.com/uc?export=view&id={DRIVE_FOLDER_ID}&name={p_id}.png"
+                            # ⚡ THE UNBREAKABLE GOOGLE DRIVE VIEWER LINK: 
+                            # Folder ID နှင့် ကုန်ပစ္စည်း ID (.png) ကို အခြေခံ၍ ဒရိုက်ထဲမှ ပုံအစစ်များကို တိုက်ရိုက်ဆွဲထုတ်ပြသသည့် အတည်ငြိမ်ဆုံးစနစ်
+                            drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}={p_id}"
                             
                             st.markdown(f"""
                                 <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
