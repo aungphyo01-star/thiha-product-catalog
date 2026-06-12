@@ -40,7 +40,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data(ttl=60) # ⚡ ချက်ချင်း Update သိနိုင်ရန် Cache သက်တမ်းကို ၁ မိနစ်သာ ထားရှိပါသည်
+@st.cache_data(ttl=60)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
     url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv"
@@ -66,11 +66,11 @@ if df is not None:
             except:
                 p_price = 0.0
                 
+            p_image = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
             p_category = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
             if p_category.lower() == "nan" or p_category == "":
                 p_category = "Uncategorized"
                 
-            # ⚡ CRASH-SAFE: အမည်မပါသော ပစ္စည်းများကို ID ဖြင့် အစားထိုးပြသပြီး ဒေတာပျောက်မသွားစေရန် ထိန်းသိမ်းခြင်း
             if p_myanmar and p_myanmar.lower() != "nan" and p_myanmar != "":
                 display_title = p_myanmar
             elif p_name and p_name.lower() != "nan" and p_name != "":
@@ -83,6 +83,7 @@ if df is not None:
                     "id": p_id,
                     "name": display_title,
                     "price": p_price,
+                    "image": p_image,
                     "category": p_category
                 })
         except:
@@ -115,18 +116,22 @@ if df is not None:
                 for idx, (_, prod) in enumerate(row_items.iterrows()):
                     with cols[idx]:
                         with st.container():
-                            p_id = prod["id"]
                             
-                            # ⚡ THE BULLSEYE PUBLIC LINK: အကောင့်ဝင်စရာမလိုဘဲ ပုံအစစ်များကို ရာနှုန်းပြည့်ဆွဲထုတ်ပေးသော Odoo Public API Link ဖြစ်ပါသည်
-                            odoo_public_img = f"https://odoo.linklusion.co.jp/web/image?model=product.product&id={p_id}&field=image_128"
-                            
-                            st.markdown(f"""
-                                <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                    <img src="{odoo_public_img}" 
-                                         style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;"
-                                         onerror="this.onerror=null; this.src='https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product';">
-                                </div>
-                            """, unsafe_allow_html=True)
+                            # ⚡ UNBREAKABLE LOCAL DECODER: Sheet ထဲက စိတ်ချရသော ပုံစာသားကို သုံး၍ ပုံအစစ်များကို တိုက်ရိုက်ဆွဲပြခြင်း
+                            if prod['image'] and prod['image'].lower() != "nan" and prod['image'] != "":
+                                st.markdown(f"""
+                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                                        <img src="data:image/png;base64,{prod['image']}" 
+                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            else:
+                                st.markdown("""
+                                    <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                                        <img src="https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product" 
+                                             style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;">
+                                    </div>
+                                """, unsafe_allow_html=True)
 
                             try:
                                 price_str = f"{int(prod['price']):,}"
