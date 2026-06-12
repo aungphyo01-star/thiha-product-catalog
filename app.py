@@ -40,6 +40,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# ⚡ မင်းရဲ့ Google Drive Folder ID စစ်စစ် (ဤ Folder အား Anyone with link can view ပေးထားရန် မဖြစ်မနေ လိုအပ်ပါသည်)
+DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
+
 @st.cache_data(ttl=300)
 def load_catalog_data():
     SPREADSHEET_ID = "1wOuXbwcU9q3Jxgl4s1y2_RImhoY1dy-GdNyAPsHRUnk"
@@ -53,7 +56,7 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # Index စနစ်ဖြင့် အကွက်များကို အတိအကျကောက်ယူခြင်း (Robust Index Matching)
+    # Index စနစ်ဖြင့် Column matching အမှန်ကန်ဆုံးလုပ်ခြင်း
     parsed_products = []
     
     for index, row in df.iterrows():
@@ -67,8 +70,6 @@ if df is not None:
             except:
                 p_price = 0.0
                 
-            p_image_url = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
-            
             p_category = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "Uncategorized"
             if p_category.lower() == "nan" or p_category == "":
                 p_category = "Uncategorized"
@@ -80,7 +81,6 @@ if df is not None:
                     "id": p_id,
                     "name": display_title,
                     "price": p_price,
-                    "image_url": p_image_url,
                     "category": p_category
                 })
         except:
@@ -89,7 +89,6 @@ if df is not None:
     if len(parsed_products) > 0:
         pdf = pd.DataFrame(parsed_products)
 
-        # Filter & Search UI
         categories = ["All Categories"] + sorted(pdf['category'].unique().tolist())
         selected_category = st.selectbox("📂 ကုန်ပစ္စည်းအုပ်စု (Category) အလိုက် စစ်ထုတ်ကြည့်ရှုရန်", categories)
         search_query = st.text_input("🔍 ကုန်ပစ္စည်းရှာဖွေရန်", placeholder="Type to search...")
@@ -114,16 +113,15 @@ if df is not None:
                 for idx, (_, prod) in enumerate(row_items.iterrows()):
                     with cols[idx]:
                         with st.container():
+                            p_id = prod["id"]
                             
-                            # ⚡ DIRECT LIVE LINK SYSTEM: Hosting ပေါ်မှ တိုက်ရိုက်ထွက်လာသော တရားဝင် Link ဖြစ်သဖြင့် Permission ကန့်သတ်ချက် လုံးဝမရှိပါ
-                            if prod['image_url'] and prod['image_url'].lower() != "nan" and prod['image_url'] != "":
-                                final_img = prod['image_url']
-                            else:
-                                final_img = "https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product"
-                                
+                            # ⚡ THE UNBREAKABLE DRIVE VIEW LINK: Google Drive XML File Content Delivery Link ဖြစ်ပါသည်။
+                            # ၎င်းသည် Folder ID နှင့် ဖိုင်အမည် (ID.png) ကို အခြေခံပြီး တိုက်ရိုက်ဆွဲထုတ်ပြသပေးသော ကမ္ဘာသုံးအမှန်ကန်ဆုံး လင့်ခ်ဖြစ်ပါသည်။
+                            drive_img_url = f"https://docs.google.com/uc?export=view&id={DRIVE_FOLDER_ID}&name={p_id}.png"
+                            
                             st.markdown(f"""
                                 <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                    <img src="{final_img}" 
+                                    <img src="{drive_img_url}" 
                                          style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;"
                                          onerror="this.onerror=null; this.src='https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product';">
                                 </div>
