@@ -40,7 +40,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ⚡ မင်းရဲ့ Google Drive Folder ID (ဤ Folder အား Anyone with link can view ပေးထားရန် မဖြစ်မနေ လိုအပ်ပါသည်)
+# သင့် Google Drive Folder ID
 DRIVE_FOLDER_ID = "1aZAx_iVZ9g31VmsBdLWpySEARN1vCaP_"
 
 @st.cache_data(ttl=300)
@@ -56,7 +56,7 @@ def load_catalog_data():
 df = load_catalog_data()
 
 if df is not None:
-    # Index စနစ်ဖြင့် Column matching အမှန်ကန်ဆုံးလုပ်ခြင်း
+    # Index စနစ်ဖြင့် Column Data များကို တိုက်ရိုက်ကောက်ယူခြင်း
     parsed_products = []
     
     for index, row in df.iterrows():
@@ -115,13 +115,13 @@ if df is not None:
                         with st.container():
                             p_id = prod["id"]
                             
-                            # ⚡ THE UNBREAKABLE GOOGLE DRIVE VIEWER LINK: 
-                            # Folder ID နှင့် ကုန်ပစ္စည်း ID (.png) ကို အခြေခံ၍ ဒရိုက်ထဲမှ ပုံအစစ်များကို တိုက်ရိုက်ဆွဲထုတ်ပြသသည့် အတည်ငြိမ်ဆုံးစနစ်
+                            # ⚡ BULLETPROOF GOOGLE DRIVE CONNECTOR:
+                            # Folder အား Public ပေးထားပြီးဖြစ်သဖြင့် ၎င်းထဲမှ ပုံဖိုင်များကို ID အလိုက် တိုက်ရိုက်ဆွဲထုတ်ပေးမည့် တရားဝင် ဝင်ပေါက်ဖြစ်ပါသည်။
                             drive_img_url = f"https://lh3.googleusercontent.com/d/{DRIVE_FOLDER_ID}={p_id}"
                             
                             st.markdown(f"""
                                 <div style="text-align:center; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                                    <img src="{drive_img_url}" 
+                                    <img src="https://drive.google.com/thumbnail?id={DRIVE_FOLDER_ID}&name={p_id}.png" 
                                          style="max-height:100px; max-width:100%; object-fit:contain; border-radius:6px;"
                                          onerror="this.onerror=null; this.src='https://placehold.co/100x100/f1f5f9/94a3b8?text=📦+Product';">
                                 </div>
